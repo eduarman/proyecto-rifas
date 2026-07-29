@@ -1,0 +1,50 @@
+/* Design tokens extracted from the Rifly Mobile prototype */
+:root {
+  --brand: #2563eb;
+  --brand-dark: #1d4ed8;
+  --ink: #0f172a;
+  --slate-700: #334155;
+  --slate-500: #64748b;
+  --slate-400: #94a3b8;
+  --tint: #eaf1ff;
+  --tint-bg: #eef4ff;
+  --panel: #f3f6fb;
+  --line: #e5e9f0;
+  --line-soft: #eef1f6;
+  --input-line: #dde3ec;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #e9edf3;
+  font-family: Helvetica, Arial, sans-serif;
+  color: var(--ink);
+}
+
+a {
+  color: var(--brand);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--brand-dark);
+}
+
+button {
+  font-family: inherit;
+}
+
+/* Mobile device frame — the prototype is a fixed 390px column */
+#app {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+}
