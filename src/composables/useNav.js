@@ -32,6 +32,13 @@ export function useNav() {
     router.push({ name: 'admin' })
   }
 
+  // Mock login gate before checkout: login carries `next` forward and lands
+  // the buyer on the payment screen for this rifa/qty once "logged in".
+  function goCheckout(rifaId, qty) {
+    menuOpen.value = false
+    router.push({ name: 'login', query: { next: `/pago/${rifaId}?qty=${qty}` } })
+  }
+
   function selectRifa(id) {
     menuOpen.value = false
     router.push({ name: 'detail', params: { id } })
@@ -43,5 +50,5 @@ export function useNav() {
     router.push({ name: 'home', hash: '#' + id })
   }
 
-  return { menuOpen, toggleMenu, goHome, goRifas, goLogin, goAdmin, selectRifa, goSection }
+  return { menuOpen, toggleMenu, goHome, goRifas, goLogin, goAdmin, goCheckout, selectRifa, goSection }
 }

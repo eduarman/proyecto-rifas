@@ -24,7 +24,13 @@ function handleSubmit() {
     return
   }
   // No customer backend yet: any submission mocks a successful login.
-  goHome()
+  // `next` carries the buyer back to checkout when login was triggered
+  // from "Comprar números"; otherwise land on Home as before.
+  if (route.query.next) {
+    router.push(route.query.next.toString())
+  } else {
+    goHome()
+  }
 }
 </script>
 

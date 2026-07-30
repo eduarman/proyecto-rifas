@@ -13,6 +13,7 @@ import {
   removeScheduleItem,
 } from '../data/content.js'
 import { winners, addWinner, updateWinner, removeWinner } from '../data/winners.js'
+import { orders, setOrderStatus } from '../data/orders.js'
 import { logoutAdmin } from '../composables/useAuth.js'
 
 const router = useRouter()
@@ -385,6 +386,37 @@ function cancelScheduleEdit() {
           </div>
         </div>
       </section>
+
+      <section class="admin-section">
+        <h2 class="section-heading">Pagos</h2>
+        <div class="card">
+          <h2 class="card-heading">Pagos recibidos ({{ orders.length }})</h2>
+          <p v-if="orders.length === 0" class="empty-note">Aún no se han recibido pagos.</p>
+          <div class="rifa-list">
+            <div v-for="o in orders" :key="o.id" class="rifa-row">
+              <div class="row-main">
+                <div class="row-title">
+                  {{ o.buyerName }}
+                  <span class="status-chip" :class="'status-' + o.status">{{ o.status }}</span>
+                </div>
+                <div class="row-desc wrap">
+                  {{ o.rifaTitle }} · {{ o.qty }} número(s) · ${{ o.total }} · {{ o.paymentMethod }} ·
+                  comprobante: {{ o.proofName || 'sin archivo' }} · contacto: {{ o.buyerContact }}
+                </div>
+              </div>
+              <div class="row-actions">
+                <template v-if="o.status === 'pendiente'">
+                  <button class="row-toggle approve" @click="setOrderStatus(o.id, 'verificado')">Aprobar</button>
+                  <button class="row-delete" @click="setOrderStatus(o.id, 'rechazado')">Rechazar</button>
+                </template>
+                <button v-else class="row-toggle" @click="setOrderStatus(o.id, 'pendiente')">
+                  Marcar pendiente
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   </div>
 </template>
@@ -624,6 +656,37 @@ function cancelScheduleEdit() {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.row-desc.wrap {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+.status-chip {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  text-transform: capitalize;
+}
+.status-pendiente {
+  background: #fef9c3;
+  color: #a16207;
+}
+.status-verificado {
+  background: #dcfce7;
+  color: #15803d;
+}
+.status-rechazado {
+  background: #fee2e2;
+  color: #dc2626;
+}
+.row-toggle.approve {
+  border-color: #bbf7d0;
+  color: #15803d;
+}
+.row-toggle.approve:hover {
+  background: #f0fdf4;
 }
 .row-actions {
   flex-shrink: 0;

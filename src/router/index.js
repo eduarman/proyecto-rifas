@@ -3,6 +3,7 @@ import HomeView from '../views/HomeView.vue'
 import RifasView from '../views/RifasView.vue'
 import DetailView from '../views/DetailView.vue'
 import LoginView from '../views/LoginView.vue'
+import CheckoutView from '../views/CheckoutView.vue'
 import AdminView from '../views/AdminView.vue'
 import { isAdmin } from '../composables/useAuth.js'
 
@@ -13,6 +14,7 @@ const router = createRouter({
     { path: '/rifas', name: 'rifas', component: RifasView },
     { path: '/rifas/:id', name: 'detail', component: DetailView, props: true },
     { path: '/login', name: 'login', component: LoginView },
+    { path: '/pago/:id', name: 'checkout', component: CheckoutView, props: true },
     { path: '/admin', name: 'admin', component: AdminView, meta: { requiresAdmin: true } },
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],

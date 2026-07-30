@@ -7,8 +7,10 @@ import { useNav } from './composables/useNav.js'
 
 const route = useRoute()
 const { menuOpen } = useNav()
-// Login and Admin are full-screen states without the public app chrome.
-const isBareLayout = computed(() => route.name === 'login' || route.name === 'admin')
+// Login, Checkout and Admin are full-screen states without the public app chrome.
+const isBareLayout = computed(() =>
+  route.name === 'login' || route.name === 'checkout' || route.name === 'admin',
+)
 </script>
 
 <template>

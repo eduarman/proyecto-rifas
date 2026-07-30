@@ -5,7 +5,7 @@ import { rifas } from '../data/content.js'
 import { useNav } from '../composables/useNav.js'
 
 const route = useRoute()
-const { goRifas, goLogin } = useNav()
+const { goRifas, goCheckout } = useNav()
 
 const qty = ref(1)
 // Deactivated rifas are excluded entirely, same as from the public listing —
@@ -30,6 +30,10 @@ function incQty() {
 }
 function decQty() {
   qty.value = Math.max(1, qty.value - 1)
+}
+
+function handleBuy() {
+  goCheckout(selectedRifa.value.id, qty.value)
 }
 </script>
 
@@ -103,7 +107,7 @@ function decQty() {
             <span class="total-amount-desktop">${{ total }}</span>
           </div>
 
-          <button class="buy" @click="goLogin">Comprar números</button>
+          <button class="buy" @click="handleBuy">Comprar números</button>
           <div class="secure-note">
             <svg width="12" height="12" viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V6l8-4z" fill="#94a3b8" /></svg>
             Pago 100% seguro y verificado
