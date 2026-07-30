@@ -14,9 +14,9 @@ const password = ref('')
 const error = ref('')
 const isAdminLogin = ref(!!route.query.redirect)
 
-function handleSubmit() {
+async function handleSubmit() {
   if (isAdminLogin.value) {
-    if (loginAdmin(email.value, password.value)) {
+    if (await loginAdmin(email.value, password.value)) {
       router.push(route.query.redirect.toString())
     } else {
       error.value = 'Credenciales de administrador incorrectas.'

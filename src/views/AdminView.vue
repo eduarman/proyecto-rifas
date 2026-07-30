@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import BrandLogo from '../components/BrandLogo.vue'
 import {
@@ -7,16 +7,49 @@ import {
   addRifa,
   removeRifa,
   toggleRifaActive,
+  loadRifas,
   schedule,
   addScheduleItem,
   updateScheduleItem,
   removeScheduleItem,
+  loadSchedule,
 } from '../data/content.js'
-import { winners, addWinner, updateWinner, removeWinner } from '../data/winners.js'
-import { orders, setOrderStatus } from '../data/orders.js'
+import { winners, addWinner, updateWinner, removeWinner, loadWinners } from '../data/winners.js'
+import { orders, setOrderStatus, loadOrders, getProofSignedUrl } from '../data/orders.js'
 import { logoutAdmin } from '../composables/useAuth.js'
 
 const router = useRouter()
+
+const errorMsg = ref('')
+
+// Wraps admin mutations so a failed insert/update (network hiccup, RLS
+// rejection) shows up instead of silently doing nothing.
+async function run(fn) {
+  try {
+    await fn()
+  } catch (e) {
+    errorMsg.value = e?.message || 'Ocurrió un error. Intenta de nuevo.'
+    setTimeout(() => {
+      errorMsg.value = ''
+    }, 5000)
+  }
+}
+
+// Re-fetch with admin visibility (inactive rifas, all winners/orders) once
+// the route guard has confirmed this session is actually an admin.
+onMounted(() => {
+  loadRifas()
+  loadSchedule()
+  loadWinners()
+  loadOrders()
+})
+
+async function viewProof(path) {
+  if (!path) return
+  const url = await getProofSignedUrl(path)
+  if (url) window.open(url, '_blank', 'noopener')
+  else errorMsg.value = 'No se pudo abrir el comprobante.'
+}
 
 const badgePresets = {
   Nueva: { bg: '#eef2ff', color: '#4338ca' },
@@ -41,30 +74,32 @@ function emptyForm() {
 const form = ref(emptyForm())
 const successMsg = ref('')
 
-function handleSubmit() {
-  const preset = badgePresets[form.value.badge]
-  const nueva = addRifa({
-    title: form.value.title,
-    desc: form.value.desc,
-    longDesc: form.value.longDesc,
-    price: Number(form.value.price),
-    date: form.value.date,
-    sold: Number(form.value.sold) || 0,
-    available: Number(form.value.available),
-    imageLabel: form.value.imageLabel || `foto: ${form.value.title}`,
-    badge: form.value.badge,
-    badgeBg: preset.bg,
-    badgeColor: preset.color,
+async function handleSubmit() {
+  await run(async () => {
+    const preset = badgePresets[form.value.badge]
+    const nueva = await addRifa({
+      title: form.value.title,
+      desc: form.value.desc,
+      longDesc: form.value.longDesc,
+      price: Number(form.value.price),
+      date: form.value.date,
+      sold: Number(form.value.sold) || 0,
+      available: Number(form.value.available),
+      imageLabel: form.value.imageLabel || `foto: ${form.value.title}`,
+      badge: form.value.badge,
+      badgeBg: preset.bg,
+      badgeColor: preset.color,
+    })
+    successMsg.value = `"${nueva.title}" se creó correctamente.`
+    form.value = emptyForm()
+    setTimeout(() => {
+      successMsg.value = ''
+    }, 4000)
   })
-  successMsg.value = `"${nueva.title}" se creó correctamente.`
-  form.value = emptyForm()
-  setTimeout(() => {
-    successMsg.value = ''
-  }, 4000)
 }
 
-function handleLogout() {
-  logoutAdmin()
+async function handleLogout() {
+  await logoutAdmin()
   router.push('/')
 }
 
@@ -85,27 +120,29 @@ const winnerForm = ref(emptyWinnerForm())
 const editingWinnerId = ref(null)
 const winnerMsg = ref('')
 
-function handleWinnerSubmit() {
-  const data = {
-    name: winnerForm.value.name,
-    prize: winnerForm.value.prize,
-    rifaTitle: winnerForm.value.rifaTitle,
-    city: winnerForm.value.city,
-    date: winnerForm.value.date,
-    initials: initialsOf(winnerForm.value.name),
-  }
-  if (editingWinnerId.value) {
-    updateWinner(editingWinnerId.value, data)
-    winnerMsg.value = `"${data.name}" se actualizó correctamente.`
-    editingWinnerId.value = null
-  } else {
-    addWinner(data)
-    winnerMsg.value = `"${data.name}" se agregó como ganador.`
-  }
-  winnerForm.value = emptyWinnerForm()
-  setTimeout(() => {
-    winnerMsg.value = ''
-  }, 4000)
+async function handleWinnerSubmit() {
+  await run(async () => {
+    const data = {
+      name: winnerForm.value.name,
+      prize: winnerForm.value.prize,
+      rifaTitle: winnerForm.value.rifaTitle,
+      city: winnerForm.value.city,
+      date: winnerForm.value.date,
+      initials: initialsOf(winnerForm.value.name),
+    }
+    if (editingWinnerId.value) {
+      await updateWinner(editingWinnerId.value, data)
+      winnerMsg.value = `"${data.name}" se actualizó correctamente.`
+      editingWinnerId.value = null
+    } else {
+      await addWinner(data)
+      winnerMsg.value = `"${data.name}" se agregó como ganador.`
+    }
+    winnerForm.value = emptyWinnerForm()
+    setTimeout(() => {
+      winnerMsg.value = ''
+    }, 4000)
+  })
 }
 
 function editWinner(w) {
@@ -128,27 +165,29 @@ const scheduleForm = ref(emptyScheduleForm())
 const editingScheduleId = ref(null)
 const scheduleMsg = ref('')
 
-function handleScheduleSubmit() {
-  const data = {
-    title: scheduleForm.value.title,
-    prize: scheduleForm.value.prize,
-    mon: scheduleForm.value.mon.toUpperCase(),
-    day: scheduleForm.value.day,
-    time: scheduleForm.value.time,
-    status: scheduleForm.value.status,
-  }
-  if (editingScheduleId.value) {
-    updateScheduleItem(editingScheduleId.value, data)
-    scheduleMsg.value = `"${data.title}" se actualizó correctamente.`
-    editingScheduleId.value = null
-  } else {
-    addScheduleItem(data)
-    scheduleMsg.value = `"${data.title}" se agregó a la agenda.`
-  }
-  scheduleForm.value = emptyScheduleForm()
-  setTimeout(() => {
-    scheduleMsg.value = ''
-  }, 4000)
+async function handleScheduleSubmit() {
+  await run(async () => {
+    const data = {
+      title: scheduleForm.value.title,
+      prize: scheduleForm.value.prize,
+      mon: scheduleForm.value.mon.toUpperCase(),
+      day: scheduleForm.value.day,
+      time: scheduleForm.value.time,
+      status: scheduleForm.value.status,
+    }
+    if (editingScheduleId.value) {
+      await updateScheduleItem(editingScheduleId.value, data)
+      scheduleMsg.value = `"${data.title}" se actualizó correctamente.`
+      editingScheduleId.value = null
+    } else {
+      await addScheduleItem(data)
+      scheduleMsg.value = `"${data.title}" se agregó a la agenda.`
+    }
+    scheduleForm.value = emptyScheduleForm()
+    setTimeout(() => {
+      scheduleMsg.value = ''
+    }, 4000)
+  })
 }
 
 function editScheduleItem(e) {
@@ -175,6 +214,7 @@ function cancelScheduleEdit() {
     <div class="content">
       <h1 class="page-title">Panel de administrador</h1>
       <p class="page-sub">Crea nuevas rifas y gestiona las que ya están publicadas.</p>
+      <p v-if="errorMsg" class="error-banner">{{ errorMsg }}</p>
 
       <section class="admin-section">
         <h2 class="section-heading">Rifas</h2>
@@ -245,10 +285,10 @@ function cancelScheduleEdit() {
                 <div class="row-desc">{{ r.desc }} · ${{ r.price }}/número · {{ r.date }}</div>
               </div>
               <div class="row-actions">
-                <button class="row-toggle" @click="toggleRifaActive(r.id)">
+                <button class="row-toggle" @click="run(() => toggleRifaActive(r.id))">
                   {{ r.active ? 'Dar de baja' : 'Reactivar' }}
                 </button>
-                <button v-if="r.custom" class="row-delete" @click="removeRifa(r.id)">Eliminar</button>
+                <button v-if="r.custom" class="row-delete" @click="run(() => removeRifa(r.id))">Eliminar</button>
               </div>
             </div>
           </div>
@@ -308,7 +348,7 @@ function cancelScheduleEdit() {
                 </div>
                 <div class="row-actions">
                   <button class="row-toggle" @click="editWinner(w)">Editar</button>
-                  <button class="row-delete" @click="removeWinner(w.id)">Eliminar</button>
+                  <button class="row-delete" @click="run(() => removeWinner(w.id))">Eliminar</button>
                 </div>
               </div>
             </div>
@@ -379,7 +419,7 @@ function cancelScheduleEdit() {
                 </div>
                 <div class="row-actions">
                   <button class="row-toggle" @click="editScheduleItem(e)">Editar</button>
-                  <button class="row-delete" @click="removeScheduleItem(e.id)">Eliminar</button>
+                  <button class="row-delete" @click="run(() => removeScheduleItem(e.id))">Eliminar</button>
                 </div>
               </div>
             </div>
@@ -401,15 +441,22 @@ function cancelScheduleEdit() {
                 </div>
                 <div class="row-desc wrap">
                   {{ o.rifaTitle }} · {{ o.qty }} número(s) · ${{ o.total }} · {{ o.paymentMethod }} ·
-                  comprobante: {{ o.proofName || 'sin archivo' }} · contacto: {{ o.buyerContact }}
+                  contacto: {{ o.buyerContact }}
                 </div>
               </div>
               <div class="row-actions">
+                <button v-if="o.proofPath" class="row-toggle" @click="viewProof(o.proofPath)">
+                  Ver comprobante
+                </button>
                 <template v-if="o.status === 'pendiente'">
-                  <button class="row-toggle approve" @click="setOrderStatus(o.id, 'verificado')">Aprobar</button>
-                  <button class="row-delete" @click="setOrderStatus(o.id, 'rechazado')">Rechazar</button>
+                  <button class="row-toggle approve" @click="run(() => setOrderStatus(o.id, 'verificado'))">
+                    Aprobar
+                  </button>
+                  <button class="row-delete" @click="run(() => setOrderStatus(o.id, 'rechazado'))">
+                    Rechazar
+                  </button>
                 </template>
-                <button v-else class="row-toggle" @click="setOrderStatus(o.id, 'pendiente')">
+                <button v-else class="row-toggle" @click="run(() => setOrderStatus(o.id, 'pendiente'))">
                   Marcar pendiente
                 </button>
               </div>
@@ -468,6 +515,16 @@ function cancelScheduleEdit() {
   font-size: 14px;
   color: var(--slate-500);
   margin: 0 0 26px;
+}
+.error-banner {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin: 0 0 24px;
 }
 .admin-section {
   margin-bottom: 36px;

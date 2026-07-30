@@ -5,7 +5,7 @@ import DetailView from '../views/DetailView.vue'
 import LoginView from '../views/LoginView.vue'
 import CheckoutView from '../views/CheckoutView.vue'
 import AdminView from '../views/AdminView.vue'
-import { isAdmin } from '../composables/useAuth.js'
+import { isAdmin, authReady } from '../composables/useAuth.js'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -27,11 +27,15 @@ const router = createRouter({
   },
 })
 
-// Client-side gate only: pairs with the mock auth in useAuth.js. A real
-// deployment needs a server-verified session, not just a route guard.
-router.beforeEach((to) => {
-  if (to.meta.requiresAdmin && !isAdmin.value) {
-    return { path: '/login', query: { redirect: to.fullPath } }
+// Real Supabase session check. The actual enforcement is server-side (RLS
+// policies keyed off is_admin()) — this guard just keeps the UI from
+// flashing admin-only screens before redirecting.
+router.beforeEach(async (to) => {
+  if (to.meta.requiresAdmin) {
+    await authReady
+    if (!isAdmin.value) {
+      return { path: '/login', query: { redirect: to.fullPath } }
+    }
   }
 })
 

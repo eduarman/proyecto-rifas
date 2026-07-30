@@ -1,67 +1,60 @@
 import { reactive } from 'vue'
+import { supabase } from '../lib/supabase.js'
 
 // Winner records managed from the admin panel. Not shown on the public
 // site yet — admin-only data management for now.
-const STORAGE_KEY = 'rifly_winners'
+export const winners = reactive([])
 
-function loadStoredWinners() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY))
-  } catch {
-    return null
+function rowToWinner(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    prize: row.prize,
+    rifaTitle: row.rifa_title,
+    city: row.city,
+    date: row.date,
+    initials: row.initials,
   }
 }
 
-function persistWinners() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(winners))
+function winnerToRow(data) {
+  return {
+    name: data.name,
+    prize: data.prize,
+    rifa_title: data.rifaTitle,
+    city: data.city || null,
+    date: data.date,
+    initials: data.initials,
+  }
 }
 
-function makeId() {
-  return `w-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
+export async function loadWinners() {
+  const { data, error } = await supabase.from('winners').select('*').order('created_at', { ascending: false })
+  if (!error && data) winners.splice(0, winners.length, ...data.map(rowToWinner))
 }
 
-const seedWinners = [
-  {
-    id: 'w-seed-1',
-    name: 'María González',
-    prize: 'iPhone 15 Pro Max',
-    rifaTitle: 'Rifa Tech',
-    city: 'Caracas',
-    date: '2 de julio',
-    initials: 'MG',
-  },
-  {
-    id: 'w-seed-2',
-    name: 'Carlos Rodríguez',
-    prize: '$1.500 en efectivo',
-    rifaTitle: 'Rifa Efectivo',
-    city: 'Valencia',
-    date: '18 de junio',
-    initials: 'CR',
-  },
-]
-
-export const winners = reactive(loadStoredWinners() || seedWinners)
-
-export function addWinner(data) {
-  const nuevo = { ...data, id: makeId() }
+export async function addWinner(data) {
+  const { data: inserted, error } = await supabase
+    .from('winners')
+    .insert(winnerToRow(data))
+    .select()
+    .single()
+  if (error) throw error
+  const nuevo = rowToWinner(inserted)
   winners.unshift(nuevo)
-  persistWinners()
   return nuevo
 }
 
-export function updateWinner(id, data) {
+export async function updateWinner(id, data) {
+  const { error } = await supabase.from('winners').update(winnerToRow(data)).eq('id', id)
+  if (error) throw error
   const idx = winners.findIndex((w) => w.id === id)
-  if (idx !== -1) {
-    winners[idx] = { ...winners[idx], ...data }
-    persistWinners()
-  }
+  if (idx !== -1) winners[idx] = { ...winners[idx], ...data }
 }
 
-export function removeWinner(id) {
+export async function removeWinner(id) {
+  const { error } = await supabase.from('winners').delete().eq('id', id)
+  if (error) throw error
   const idx = winners.findIndex((w) => w.id === id)
-  if (idx !== -1) {
-    winners.splice(idx, 1)
-    persistWinners()
-  }
+  if (idx !== -1) winners.splice(idx, 1)
 }

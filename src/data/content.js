@@ -2,6 +2,7 @@
 // `icon` fields hold the inner SVG markup rendered inside a 24x24 viewBox.
 
 import { reactive } from 'vue'
+import { supabase } from '../lib/supabase.js'
 
 export const steps = [
   {
@@ -87,55 +88,48 @@ export const testimonials = [
   },
 ]
 
-const SCHEDULE_STORAGE_KEY = 'rifly_schedule'
+export const schedule = reactive([])
 
-function loadStoredSchedule() {
-  try {
-    return JSON.parse(localStorage.getItem(SCHEDULE_STORAGE_KEY))
-  } catch {
-    return null
-  }
+function rowToSchedule(row) {
+  return { id: row.id, title: row.title, prize: row.prize, mon: row.mon, day: row.day, time: row.time, status: row.status }
 }
 
-function persistSchedule() {
-  localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(schedule))
+function scheduleToRow(data) {
+  return { title: data.title, prize: data.prize, mon: data.mon, day: data.day, time: data.time, status: data.status }
 }
 
-function makeScheduleId() {
-  return `sch-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
+export async function loadSchedule() {
+  const { data, error } = await supabase.from('schedule').select('*').order('created_at')
+  if (!error && data) schedule.splice(0, schedule.length, ...data.map(rowToSchedule))
 }
 
-const seedSchedule = [
-  { id: 'sch-seed-1', mon: 'JUL', day: '30', title: 'Gran Sorteo Deportivo', prize: 'Auto + $5.000', time: '8:00 PM', status: 'Activa' },
-  { id: 'sch-seed-2', mon: 'AGO', day: '05', title: 'Rifa Tech', prize: 'iPhone 15 Pro Max', time: '9:00 PM', status: 'Activa' },
-  { id: 'sch-seed-3', mon: 'AGO', day: '12', title: 'Rifa Efectivo', prize: '$3.000 USD', time: '8:30 PM', status: 'Activa' },
-  { id: 'sch-seed-4', mon: 'AGO', day: '20', title: 'Rifa Viaje', prize: 'Viaje a Margarita', time: '9:00 PM', status: 'Activa' },
-]
-
-export const schedule = reactive(loadStoredSchedule() || seedSchedule)
-
-export function addScheduleItem(data) {
-  const nuevo = { ...data, id: makeScheduleId() }
+export async function addScheduleItem(data) {
+  const { data: inserted, error } = await supabase
+    .from('schedule')
+    .insert(scheduleToRow(data))
+    .select()
+    .single()
+  if (error) throw error
+  const nuevo = rowToSchedule(inserted)
   schedule.push(nuevo)
-  persistSchedule()
   return nuevo
 }
 
-export function updateScheduleItem(id, data) {
+export async function updateScheduleItem(id, data) {
+  const { error } = await supabase.from('schedule').update(scheduleToRow(data)).eq('id', id)
+  if (error) throw error
   const idx = schedule.findIndex((e) => e.id === id)
-  if (idx !== -1) {
-    schedule[idx] = { ...schedule[idx], ...data }
-    persistSchedule()
-  }
+  if (idx !== -1) schedule[idx] = { ...schedule[idx], ...data }
 }
 
-export function removeScheduleItem(id) {
+export async function removeScheduleItem(id) {
+  const { error } = await supabase.from('schedule').delete().eq('id', id)
+  if (error) throw error
   const idx = schedule.findIndex((e) => e.id === id)
-  if (idx !== -1) {
-    schedule.splice(idx, 1)
-    persistSchedule()
-  }
+  if (idx !== -1) schedule.splice(idx, 1)
 }
+
+loadSchedule()
 
 export const faqs = [
   {
@@ -165,20 +159,46 @@ export const faqs = [
   },
 ]
 
-const STORAGE_KEY = 'rifly_rifas'
+export const rifas = reactive([])
 
-// Persists the whole list (seed + custom) so a deactivated seed rifa stays
-// deactivated after reload — not just the admin-created ones.
-function loadStoredRifas() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY))
-  } catch {
-    return null
+function rowToRifa(row) {
+  return {
+    id: row.id,
+    badge: row.badge,
+    badgeBg: row.badge_bg,
+    badgeColor: row.badge_color,
+    title: row.title,
+    desc: row.short_desc,
+    longDesc: row.long_desc,
+    sold: row.sold,
+    available: row.available,
+    date: row.date,
+    price: row.price,
+    imageLabel: row.image_label,
+    active: row.active,
+    custom: row.custom,
   }
 }
 
-function persistRifas() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(rifas))
+function rifaToRow(data) {
+  return {
+    badge: data.badge,
+    badge_bg: data.badgeBg,
+    badge_color: data.badgeColor,
+    title: data.title,
+    short_desc: data.desc,
+    long_desc: data.longDesc,
+    sold: data.sold,
+    available: data.available,
+    date: data.date,
+    price: data.price,
+    image_label: data.imageLabel,
+  }
+}
+
+export async function loadRifas() {
+  const { data, error } = await supabase.from('rifas').select('*').order('created_at')
+  if (!error && data) rifas.splice(0, rifas.length, ...data.map(rowToRifa))
 }
 
 // Strips combining diacritics (U+0300-U+036F) left over after NFD normalization,
@@ -198,84 +218,36 @@ function slugify(text) {
 
 // Created via the admin panel; new entries go first so they show up
 // immediately in the listing and the schedule stays reactive app-wide.
-export function addRifa(data) {
+export async function addRifa(data) {
   let id = slugify(data.title)
   if (rifas.some((r) => r.id === id)) id += `-${Date.now().toString(36)}`
-  const nueva = { ...data, id, custom: true, active: true }
+  const row = { id, ...rifaToRow(data), active: true, custom: true }
+  const { data: inserted, error } = await supabase.from('rifas').insert(row).select().single()
+  if (error) throw error
+  const nueva = rowToRifa(inserted)
   rifas.unshift(nueva)
-  persistRifas()
   return nueva
 }
 
 // Hard delete: only for rifas created in the admin panel. Seed rifas from the
 // prototype can only be deactivated, never removed outright.
-export function removeRifa(id) {
-  const idx = rifas.findIndex((r) => r.id === id && r.custom)
-  if (idx !== -1) {
-    rifas.splice(idx, 1)
-    persistRifas()
-  }
+export async function removeRifa(id) {
+  const rifa = rifas.find((r) => r.id === id && r.custom)
+  if (!rifa) return
+  const { error } = await supabase.from('rifas').delete().eq('id', id)
+  if (error) throw error
+  const idx = rifas.findIndex((r) => r.id === id)
+  if (idx !== -1) rifas.splice(idx, 1)
 }
 
 // Soft delete for any rifa (seed or custom): hides it from public views
 // while keeping it manageable from the admin panel.
-export function toggleRifaActive(id) {
+export async function toggleRifaActive(id) {
   const rifa = rifas.find((r) => r.id === id)
-  if (rifa) {
-    rifa.active = !rifa.active
-    persistRifas()
-  }
+  if (!rifa) return
+  const { error } = await supabase.from('rifas').update({ active: !rifa.active }).eq('id', id)
+  if (error) throw error
+  rifa.active = !rifa.active
 }
 
-const seedRifas = [
-  {
-    id: 'auto',
-    badge: '🔥 Más popular',
-    badgeBg: '#fee2e2',
-    badgeColor: '#dc2626',
-    title: 'Gran Sorteo Deportivo',
-    desc: 'Auto deportivo azul + $5.000',
-    longDesc:
-      'Un auto deportivo azul 0km totalmente equipado, más $5.000 en efectivo para gastos de patentamiento y seguro.',
-    sold: 82,
-    available: 180,
-    date: '30 de julio',
-    price: 5,
-    imageLabel: 'foto: auto deportivo azul',
-    active: true,
-  },
-  {
-    id: 'tech',
-    badge: 'Nueva',
-    badgeBg: '#eef2ff',
-    badgeColor: '#4338ca',
-    title: 'Rifa Tech',
-    desc: 'iPhone 15 Pro Max + AirPods',
-    longDesc:
-      'iPhone 15 Pro Max de 256GB con AirPods Pro incluidos, entrega sellada de fábrica con garantía oficial.',
-    sold: 34,
-    available: 660,
-    date: '5 de agosto',
-    price: 3,
-    imageLabel: 'foto: iPhone 15 Pro Max',
-    active: true,
-  },
-  {
-    id: 'cash',
-    badge: 'Cierra pronto',
-    badgeBg: '#fff7ed',
-    badgeColor: '#b45309',
-    title: 'Rifa Efectivo',
-    desc: '$3.000 en efectivo',
-    longDesc:
-      '$3.000 en efectivo transferidos directamente a tu cuenta el mismo día del sorteo, sin retenciones.',
-    sold: 80,
-    available: 160,
-    date: '12 de agosto',
-    price: 2,
-    imageLabel: 'foto: efectivo en billetes',
-    active: true,
-  },
-]
-
-export const rifas = reactive(loadStoredRifas() || seedRifas)
+loadRifas()

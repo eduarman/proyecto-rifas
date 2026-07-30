@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import BrandLogo from '../components/BrandLogo.vue'
 import { rifas } from '../data/content.js'
-import { addOrder } from '../data/orders.js'
+import { addOrder, uploadProof } from '../data/orders.js'
 import { useNav } from '../composables/useNav.js'
 
 const route = useRoute()
@@ -69,25 +69,39 @@ const currentMethod = computed(() => paymentMethods.find((m) => m.id === selecte
 const buyerName = ref('')
 const buyerContact = ref('')
 const fileName = ref('')
+const selectedFile = ref(null)
 const submitted = ref(false)
+const submitting = ref(false)
+const submitError = ref('')
 
 function handleFile(e) {
-  fileName.value = e.target.files[0]?.name || ''
+  const file = e.target.files[0] || null
+  selectedFile.value = file
+  fileName.value = file?.name || ''
 }
 
-function handleSubmit() {
-  addOrder({
-    rifaId: selectedRifa.value.id,
-    rifaTitle: selectedRifa.value.title,
-    qty: qty.value,
-    unitPrice: selectedRifa.value.price,
-    total: total.value,
-    paymentMethod: currentMethod.value.label,
-    buyerName: buyerName.value,
-    buyerContact: buyerContact.value,
-    proofName: fileName.value,
-  })
-  submitted.value = true
+async function handleSubmit() {
+  submitting.value = true
+  submitError.value = ''
+  try {
+    const proofPath = selectedFile.value ? await uploadProof(selectedFile.value) : null
+    await addOrder({
+      rifaId: selectedRifa.value.id,
+      rifaTitle: selectedRifa.value.title,
+      qty: qty.value,
+      unitPrice: selectedRifa.value.price,
+      total: total.value,
+      paymentMethod: currentMethod.value.label,
+      buyerName: buyerName.value,
+      buyerContact: buyerContact.value,
+      proofPath,
+    })
+    submitted.value = true
+  } catch {
+    submitError.value = 'Ocurrió un error al enviar tu comprobante. Intenta de nuevo.'
+  } finally {
+    submitting.value = false
+  }
 }
 </script>
 
@@ -153,7 +167,11 @@ function handleSubmit() {
       <input type="file" accept="image/*,.pdf" required class="input file-input" @change="handleFile" />
       <p v-if="fileName" class="file-name">Archivo: {{ fileName }}</p>
 
-      <button type="submit" class="submit">Enviar comprobante</button>
+      <p v-if="submitError" class="error-msg">{{ submitError }}</p>
+
+      <button type="submit" class="submit" :disabled="submitting">
+        {{ submitting ? 'Enviando...' : 'Enviar comprobante' }}
+      </button>
     </form>
   </div>
 </template>
@@ -278,6 +296,11 @@ function handleSubmit() {
   color: var(--slate-500);
   margin: -10px 0 16px;
 }
+.error-msg {
+  font-size: 12.5px;
+  color: #dc2626;
+  margin: -6px 0 14px;
+}
 .submit {
   width: 100%;
   padding: 13px;
@@ -289,6 +312,10 @@ function handleSubmit() {
   font-weight: 700;
   cursor: pointer;
   margin-top: 4px;
+}
+.submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .confirm-panel {
