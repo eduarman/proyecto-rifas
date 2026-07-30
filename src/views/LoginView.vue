@@ -1,8 +1,31 @@
 <script setup>
+import { ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import BrandLogo from '../components/BrandLogo.vue'
 import { useNav } from '../composables/useNav.js'
+import { loginAdmin } from '../composables/useAuth.js'
 
+const route = useRoute()
+const router = useRouter()
 const { goHome } = useNav()
+
+const email = ref('')
+const password = ref('')
+const error = ref('')
+const isAdminLogin = ref(!!route.query.redirect)
+
+function handleSubmit() {
+  if (isAdminLogin.value) {
+    if (loginAdmin(email.value, password.value)) {
+      router.push(route.query.redirect.toString())
+    } else {
+      error.value = 'Credenciales de administrador incorrectas.'
+    }
+    return
+  }
+  // No customer backend yet: any submission mocks a successful login.
+  goHome()
+}
 </script>
 
 <template>
@@ -18,44 +41,55 @@ const { goHome } = useNav()
       <BrandLogo :size="34" :label="20" />
     </div>
 
-    <div class="panel">
-      <h1 class="title">Ingresa a tu cuenta</h1>
-      <p class="lead">Continúa para completar tu compra de forma segura.</p>
+    <form class="panel" @submit.prevent="handleSubmit">
+      <template v-if="isAdminLogin">
+        <h1 class="title">Acceso administrador</h1>
+        <p class="lead">Ingresa con tus credenciales de administrador para continuar.</p>
+      </template>
+      <template v-else>
+        <h1 class="title">Ingresa a tu cuenta</h1>
+        <p class="lead">Continúa para completar tu compra de forma segura.</p>
+      </template>
 
       <label class="field-label">Correo electrónico</label>
-      <input type="email" placeholder="tucorreo@ejemplo.com" class="input" />
+      <input v-model="email" type="email" placeholder="tucorreo@ejemplo.com" class="input" />
 
       <div class="pw-row">
         <label class="field-label">Contraseña</label>
-        <a href="#" class="link-sm">¿Olvidaste?</a>
+        <a v-if="!isAdminLogin" href="#" class="link-sm">¿Olvidaste?</a>
       </div>
-      <input type="password" placeholder="••••••••" class="input" />
+      <input v-model="password" type="password" placeholder="••••••••" class="input" />
 
-      <button class="submit" @click="goHome">Ingresar</button>
+      <p v-if="error" class="error-msg">{{ error }}</p>
 
-      <div class="divider">
-        <div class="line" />
-        <span class="or">o continúa con</span>
-        <div class="line" />
-      </div>
+      <button type="submit" class="submit">Ingresar</button>
 
-      <button class="google">
-        <svg width="16" height="16" viewBox="0 0 24 24">
-          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
-          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.99.66-2.25 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.85A11 11 0 0012 23z" />
-          <path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 010-4.2V7.05H2.18a11 11 0 000 9.9l3.66-2.85z" />
-          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1a11 11 0 00-9.82 6.05l3.66 2.85C6.71 7.3 9.14 5.38 12 5.38z" />
-        </svg>
-        Continuar con Google
-      </button>
+      <template v-if="!isAdminLogin">
+        <div class="divider">
+          <div class="line" />
+          <span class="or">o continúa con</span>
+          <div class="line" />
+        </div>
 
-      <p class="signup">¿No tienes cuenta? <a href="#">Regístrate gratis</a></p>
-    </div>
+        <button type="button" class="google">
+          <svg width="16" height="16" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.99.66-2.25 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.85A11 11 0 0012 23z" />
+            <path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 010-4.2V7.05H2.18a11 11 0 000 9.9l3.66-2.85z" />
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1a11 11 0 00-9.82 6.05l3.66 2.85C6.71 7.3 9.14 5.38 12 5.38z" />
+          </svg>
+          Continuar con Google
+        </button>
+
+        <p class="signup">¿No tienes cuenta? <a href="#">Regístrate gratis</a></p>
+      </template>
+    </form>
   </div>
 </template>
 
 <style scoped>
 .screen {
+  width: 100%;
   min-height: 100vh;
   background: linear-gradient(180deg, #eef4ff 0%, #ffffff 40%);
   padding: 24px 20px 40px;
@@ -156,6 +190,11 @@ const { goHome } = useNav()
   justify-content: space-between;
   align-items: center;
   margin-bottom: 6px;
+}
+.error-msg {
+  font-size: 12.5px;
+  color: #dc2626;
+  margin: -6px 0 14px;
 }
 .link-sm {
   font-size: 12px;

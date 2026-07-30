@@ -27,6 +27,11 @@ export function useNav() {
     router.push({ name: 'login' })
   }
 
+  function goAdmin() {
+    menuOpen.value = false
+    router.push({ name: 'admin' })
+  }
+
   function selectRifa(id) {
     menuOpen.value = false
     router.push({ name: 'detail', params: { id } })
@@ -38,5 +43,5 @@ export function useNav() {
     router.push({ name: 'home', hash: '#' + id })
   }
 
-  return { menuOpen, toggleMenu, goHome, goRifas, goLogin, selectRifa, goSection }
+  return { menuOpen, toggleMenu, goHome, goRifas, goLogin, goAdmin, selectRifa, goSection }
 }

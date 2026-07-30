@@ -7,12 +7,12 @@ import { useNav } from './composables/useNav.js'
 
 const route = useRoute()
 const { menuOpen } = useNav()
-const isLogin = computed(() => route.name === 'login')
+// Login and Admin are full-screen states without the public app chrome.
+const isBareLayout = computed(() => route.name === 'login' || route.name === 'admin')
 </script>
 
 <template>
-  <!-- Login is a full-screen state without the app chrome -->
-  <RouterView v-if="isLogin" />
+  <RouterView v-if="isBareLayout" />
 
   <div v-else class="page">
     <SideMenu v-if="menuOpen" />

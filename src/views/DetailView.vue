@@ -8,10 +8,14 @@ const route = useRoute()
 const { goRifas, goLogin } = useNav()
 
 const qty = ref(1)
+// Deactivated rifas are excluded entirely, same as from the public listing —
+// falls back to the first active rifa rather than a 404 for a bad/stale id.
 const selectedRifa = computed(
-  () => rifas.find((r) => r.id === route.params.id) || rifas[0],
+  () =>
+    rifas.find((r) => r.id === route.params.id && r.active) ||
+    rifas.find((r) => r.active),
 )
-const total = computed(() => qty.value * selectedRifa.value.price)
+const total = computed(() => qty.value * (selectedRifa.value?.price ?? 0))
 
 // Reset the quantity whenever the visited rifa changes.
 watch(
@@ -40,7 +44,9 @@ function decQty() {
       </div>
     </div>
 
-    <div class="grid">
+    <p v-if="!selectedRifa" class="empty-state">No hay rifas disponibles en este momento.</p>
+
+    <div v-else class="grid">
       <div class="left">
         <div class="thumb">
           <span class="thumb-label">{{ selectedRifa.imageLabel }}</span>
@@ -107,7 +113,7 @@ function decQty() {
     </div>
 
     <!-- mobile-only fixed purchase bar -->
-    <div class="purchase-mobile">
+    <div v-if="selectedRifa" class="purchase-mobile">
       <div>
         <div class="total-label">Total</div>
         <div class="total-amount">${{ total }}</div>
@@ -123,6 +129,12 @@ function decQty() {
 }
 .back-row {
   padding: 18px 18px 0;
+}
+.empty-state {
+  padding: 40px 18px;
+  text-align: center;
+  color: var(--slate-500);
+  font-size: 14px;
 }
 .back {
   display: flex;

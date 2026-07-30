@@ -3,6 +3,8 @@ import HomeView from '../views/HomeView.vue'
 import RifasView from '../views/RifasView.vue'
 import DetailView from '../views/DetailView.vue'
 import LoginView from '../views/LoginView.vue'
+import AdminView from '../views/AdminView.vue'
+import { isAdmin } from '../composables/useAuth.js'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -11,6 +13,7 @@ const router = createRouter({
     { path: '/rifas', name: 'rifas', component: RifasView },
     { path: '/rifas/:id', name: 'detail', component: DetailView, props: true },
     { path: '/login', name: 'login', component: LoginView },
+    { path: '/admin', name: 'admin', component: AdminView, meta: { requiresAdmin: true } },
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
   scrollBehavior(to, from, savedPosition) {
@@ -20,6 +23,14 @@ const router = createRouter({
     }
     return { top: 0 }
   },
+})
+
+// Client-side gate only: pairs with the mock auth in useAuth.js. A real
+// deployment needs a server-verified session, not just a route guard.
+router.beforeEach((to) => {
+  if (to.meta.requiresAdmin && !isAdmin.value) {
+    return { path: '/login', query: { redirect: to.fullPath } }
+  }
 })
 
 export default router

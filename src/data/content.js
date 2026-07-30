@@ -1,6 +1,8 @@
 // Content extracted verbatim from the Rifly Mobile prototype.
 // `icon` fields hold the inner SVG markup rendered inside a 24x24 viewBox.
 
+import { reactive } from 'vue'
+
 export const steps = [
   {
     n: '01',
@@ -120,7 +122,69 @@ export const faqs = [
   },
 ]
 
-export const rifas = [
+const STORAGE_KEY = 'rifly_rifas'
+
+// Persists the whole list (seed + custom) so a deactivated seed rifa stays
+// deactivated after reload — not just the admin-created ones.
+function loadStoredRifas() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY))
+  } catch {
+    return null
+  }
+}
+
+function persistRifas() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(rifas))
+}
+
+// Strips combining diacritics (U+0300-U+036F) left over after NFD normalization,
+// e.g. "Rifa Épica" -> "rifa-epica" instead of keeping the accent as a stray mark.
+const DIACRITICS = /[̀-ͯ]/g
+
+function slugify(text) {
+  return (
+    text
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(DIACRITICS, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '') || 'rifa'
+  )
+}
+
+// Created via the admin panel; new entries go first so they show up
+// immediately in the listing and the schedule stays reactive app-wide.
+export function addRifa(data) {
+  let id = slugify(data.title)
+  if (rifas.some((r) => r.id === id)) id += `-${Date.now().toString(36)}`
+  const nueva = { ...data, id, custom: true, active: true }
+  rifas.unshift(nueva)
+  persistRifas()
+  return nueva
+}
+
+// Hard delete: only for rifas created in the admin panel. Seed rifas from the
+// prototype can only be deactivated, never removed outright.
+export function removeRifa(id) {
+  const idx = rifas.findIndex((r) => r.id === id && r.custom)
+  if (idx !== -1) {
+    rifas.splice(idx, 1)
+    persistRifas()
+  }
+}
+
+// Soft delete for any rifa (seed or custom): hides it from public views
+// while keeping it manageable from the admin panel.
+export function toggleRifaActive(id) {
+  const rifa = rifas.find((r) => r.id === id)
+  if (rifa) {
+    rifa.active = !rifa.active
+    persistRifas()
+  }
+}
+
+const seedRifas = [
   {
     id: 'auto',
     badge: '🔥 Más popular',
@@ -135,6 +199,7 @@ export const rifas = [
     date: '30 de julio',
     price: 5,
     imageLabel: 'foto: auto deportivo azul',
+    active: true,
   },
   {
     id: 'tech',
@@ -150,6 +215,7 @@ export const rifas = [
     date: '5 de agosto',
     price: 3,
     imageLabel: 'foto: iPhone 15 Pro Max',
+    active: true,
   },
   {
     id: 'cash',
@@ -165,5 +231,8 @@ export const rifas = [
     date: '12 de agosto',
     price: 2,
     imageLabel: 'foto: efectivo en billetes',
+    active: true,
   },
 ]
+
+export const rifas = reactive(loadStoredRifas() || seedRifas)

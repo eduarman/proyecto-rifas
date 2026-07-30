@@ -6,7 +6,7 @@ import heroPremio from '../assets/hero-premio.svg'
 import { steps, features, testimonials, schedule, faqs } from '../data/content.js'
 import { useNav } from '../composables/useNav.js'
 
-const { goRifas, goSection } = useNav()
+const { goRifas, goSection, goAdmin } = useNav()
 
 const faqOpen = ref(1)
 function toggleFaq(i) {
@@ -215,6 +215,7 @@ function toggleFaq(i) {
           <a href="#">Política de privacidad</a>
           <a href="#">Reglamento de sorteos</a>
           <a href="#">Contacto</a>
+          <a href="#" @click.prevent="goAdmin">Panel admin</a>
         </div>
       </div>
       <div class="footer-bottom">
@@ -425,7 +426,7 @@ function toggleFaq(i) {
 .step-n {
   font-size: 22px;
   font-weight: 800;
-  color: #e2e8f0;
+  color: var(--slate-400);
 }
 .card-title {
   font-size: 16px;
