@@ -87,12 +87,55 @@ export const testimonials = [
   },
 ]
 
-export const schedule = [
-  { mon: 'JUL', day: '30', title: 'Gran Sorteo Deportivo', prize: 'Auto + $5.000', time: '8:00 PM', status: 'Activa' },
-  { mon: 'AGO', day: '05', title: 'Rifa Tech', prize: 'iPhone 15 Pro Max', time: '9:00 PM', status: 'Activa' },
-  { mon: 'AGO', day: '12', title: 'Rifa Efectivo', prize: '$3.000 USD', time: '8:30 PM', status: 'Activa' },
-  { mon: 'AGO', day: '20', title: 'Rifa Viaje', prize: 'Viaje a Margarita', time: '9:00 PM', status: 'Activa' },
+const SCHEDULE_STORAGE_KEY = 'rifly_schedule'
+
+function loadStoredSchedule() {
+  try {
+    return JSON.parse(localStorage.getItem(SCHEDULE_STORAGE_KEY))
+  } catch {
+    return null
+  }
+}
+
+function persistSchedule() {
+  localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(schedule))
+}
+
+function makeScheduleId() {
+  return `sch-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
+}
+
+const seedSchedule = [
+  { id: 'sch-seed-1', mon: 'JUL', day: '30', title: 'Gran Sorteo Deportivo', prize: 'Auto + $5.000', time: '8:00 PM', status: 'Activa' },
+  { id: 'sch-seed-2', mon: 'AGO', day: '05', title: 'Rifa Tech', prize: 'iPhone 15 Pro Max', time: '9:00 PM', status: 'Activa' },
+  { id: 'sch-seed-3', mon: 'AGO', day: '12', title: 'Rifa Efectivo', prize: '$3.000 USD', time: '8:30 PM', status: 'Activa' },
+  { id: 'sch-seed-4', mon: 'AGO', day: '20', title: 'Rifa Viaje', prize: 'Viaje a Margarita', time: '9:00 PM', status: 'Activa' },
 ]
+
+export const schedule = reactive(loadStoredSchedule() || seedSchedule)
+
+export function addScheduleItem(data) {
+  const nuevo = { ...data, id: makeScheduleId() }
+  schedule.push(nuevo)
+  persistSchedule()
+  return nuevo
+}
+
+export function updateScheduleItem(id, data) {
+  const idx = schedule.findIndex((e) => e.id === id)
+  if (idx !== -1) {
+    schedule[idx] = { ...schedule[idx], ...data }
+    persistSchedule()
+  }
+}
+
+export function removeScheduleItem(id) {
+  const idx = schedule.findIndex((e) => e.id === id)
+  if (idx !== -1) {
+    schedule.splice(idx, 1)
+    persistSchedule()
+  }
+}
 
 export const faqs = [
   {

@@ -131,7 +131,7 @@ function toggleFaq(i) {
         <h2 class="band-title">Próximos sorteos</h2>
         <p class="band-sub">Anota las fechas y no te pierdas ningún sorteo en vivo.</p>
         <div class="agenda">
-          <div v-for="e in schedule" :key="e.title" class="agenda-row">
+          <div v-for="e in schedule" :key="e.id" class="agenda-row">
             <div class="date-chip">
               <span class="date-mon">{{ e.mon }}</span>
               <span class="date-day">{{ e.day }}</span>
