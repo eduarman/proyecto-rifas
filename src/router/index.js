@@ -4,7 +4,12 @@ import RifasView from '../views/RifasView.vue'
 import DetailView from '../views/DetailView.vue'
 import LoginView from '../views/LoginView.vue'
 import CheckoutView from '../views/CheckoutView.vue'
-import AdminView from '../views/AdminView.vue'
+import AdminLayout from '../layouts/AdminLayout.vue'
+import AdminRifasView from '../views/admin/AdminRifasView.vue'
+import AdminGanadoresView from '../views/admin/AdminGanadoresView.vue'
+import AdminAgendaView from '../views/admin/AdminAgendaView.vue'
+import AdminPagosView from '../views/admin/AdminPagosView.vue'
+import AdminVentasView from '../views/admin/AdminVentasView.vue'
 import { isAdmin, authReady } from '../composables/useAuth.js'
 
 const router = createRouter({
@@ -15,7 +20,19 @@ const router = createRouter({
     { path: '/rifas/:id', name: 'detail', component: DetailView, props: true },
     { path: '/login', name: 'login', component: LoginView },
     { path: '/pago/:id', name: 'checkout', component: CheckoutView, props: true },
-    { path: '/admin', name: 'admin', component: AdminView, meta: { requiresAdmin: true } },
+    {
+      path: '/admin',
+      component: AdminLayout,
+      meta: { requiresAdmin: true },
+      redirect: '/admin/rifas',
+      children: [
+        { path: 'rifas', name: 'admin-rifas', component: AdminRifasView },
+        { path: 'ganadores', name: 'admin-ganadores', component: AdminGanadoresView },
+        { path: 'agenda', name: 'admin-agenda', component: AdminAgendaView },
+        { path: 'pagos', name: 'admin-pagos', component: AdminPagosView },
+        { path: 'ventas', name: 'admin-ventas', component: AdminVentasView },
+      ],
+    },
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
   scrollBehavior(to, from, savedPosition) {

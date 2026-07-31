@@ -29,6 +29,7 @@ create table if not exists winners (
   city text,
   date text not null,
   initials text not null,
+  comment text,
   created_at timestamptz not null default now()
 );
 
@@ -89,7 +90,10 @@ create policy "rifas_select_public" on rifas
 create policy "rifas_admin_write" on rifas
   for all using (is_admin()) with check (is_admin());
 
--- Ganadores: solo admin (no hay vista pública todavía).
+-- Ganadores: público puede leer (se muestran como testimonios en el home);
+-- solo admin crea/edita/elimina.
+create policy "winners_select_public" on winners
+  for select using (true);
 create policy "winners_admin_all" on winners
   for all using (is_admin()) with check (is_admin());
 
@@ -136,9 +140,11 @@ insert into rifas (id, badge, badge_bg, badge_color, title, short_desc, long_des
    80, 160, '12 de agosto', 2, 'foto: efectivo en billetes', true, false)
 on conflict (id) do nothing;
 
-insert into winners (name, prize, rifa_title, city, date, initials) values
-  ('María González', 'iPhone 15 Pro Max', 'Rifa Tech', 'Caracas', '2 de julio', 'MG'),
-  ('Carlos Rodríguez', '$1.500 en efectivo', 'Rifa Efectivo', 'Valencia', '18 de junio', 'CR');
+insert into winners (name, prize, rifa_title, city, date, initials, comment) values
+  ('María González', 'iPhone 15 Pro Max', 'Rifa Tech', 'Caracas', '2 de julio', 'MG',
+   'Compré un número, gané un iPhone y recibí mi premio en dos días. Todo súper transparente.'),
+  ('Carlos Rodríguez', '$1.500 en efectivo', 'Rifa Efectivo', 'Valencia', '18 de junio', 'CR',
+   'El proceso es muy rápido. Pagué por Pago Móvil y me confirmaron en minutos. Recomendado.');
 
 insert into schedule (title, prize, mon, day, time, status) values
   ('Gran Sorteo Deportivo', 'Auto + $5.000', 'JUL', '30', '8:00 PM', 'Activa'),

@@ -1,8 +1,8 @@
 import { reactive } from 'vue'
 import { supabase } from '../lib/supabase.js'
 
-// Winner records managed from the admin panel. Not shown on the public
-// site yet — admin-only data management for now.
+// Winner records managed from the admin panel. Publicly readable — the ones
+// with a comment are shown as testimonials on the home page.
 export const winners = reactive([])
 
 function rowToWinner(row) {
@@ -14,6 +14,7 @@ function rowToWinner(row) {
     city: row.city,
     date: row.date,
     initials: row.initials,
+    comment: row.comment,
   }
 }
 
@@ -25,6 +26,7 @@ function winnerToRow(data) {
     city: data.city || null,
     date: data.date,
     initials: data.initials,
+    comment: data.comment || null,
   }
 }
 
@@ -58,3 +60,5 @@ export async function removeWinner(id) {
   const idx = winners.findIndex((w) => w.id === id)
   if (idx !== -1) winners.splice(idx, 1)
 }
+
+loadWinners()

@@ -9,7 +9,7 @@ const route = useRoute()
 const { menuOpen } = useNav()
 // Login, Checkout and Admin are full-screen states without the public app chrome.
 const isBareLayout = computed(() =>
-  route.name === 'login' || route.name === 'checkout' || route.name === 'admin',
+  route.name === 'login' || route.name === 'checkout' || route.path.startsWith('/admin'),
 )
 </script>
 

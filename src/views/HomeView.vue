@@ -1,12 +1,17 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import BaseIcon from '../components/BaseIcon.vue'
 import BrandLogo from '../components/BrandLogo.vue'
 import heroPremio from '../assets/hero-premio.svg'
-import { steps, features, testimonials, schedule, faqs } from '../data/content.js'
+import { steps, features, schedule, faqs } from '../data/content.js'
+import { winners } from '../data/winners.js'
 import { useNav } from '../composables/useNav.js'
 
 const { goRifas, goSection, goAdmin } = useNav()
+
+// Only winners with a comment read as testimonials; the rest are just
+// prize-delivery records with nothing to quote on the home page.
+const testimonials = computed(() => winners.filter((w) => w.comment))
 
 const faqOpen = ref(1)
 function toggleFaq(i) {
@@ -105,18 +110,18 @@ function toggleFaq(i) {
     </section>
 
     <!-- TESTIMONIOS -->
-    <section id="testimonios" class="band band-panel">
+    <section v-if="testimonials.length" id="testimonios" class="band band-panel">
       <div class="band-inner">
         <div class="eyebrow">TESTIMONIOS</div>
         <h2 class="band-title tight band-title-narrow">Historias que hablan por sí solas</h2>
         <div class="stack testi-grid">
-          <div v-for="t in testimonials" :key="t.initials" class="card testi-card">
-            <p class="quote">“{{ t.quote }}”</p>
+          <div v-for="t in testimonials" :key="t.id" class="card testi-card">
+            <p class="quote">“{{ t.comment }}”</p>
             <div class="testi-foot">
               <div class="avatar">{{ t.initials }}</div>
               <div>
                 <div class="testi-name">{{ t.name }}</div>
-                <div class="testi-city">{{ t.city }}</div>
+                <div v-if="t.city" class="testi-city">{{ t.city }}</div>
               </div>
             </div>
           </div>

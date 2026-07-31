@@ -64,30 +64,6 @@ export const features = [
   },
 ]
 
-export const testimonials = [
-  {
-    initials: 'MG',
-    name: 'María González',
-    city: 'Caracas',
-    quote:
-      'Compré un número, gané un iPhone y recibí mi premio en dos días. Todo súper transparente.',
-  },
-  {
-    initials: 'CR',
-    name: 'Carlos Rodríguez',
-    city: 'Valencia',
-    quote:
-      'El proceso es muy rápido. Pagué por Pago Móvil y me confirmaron en minutos. Recomendado.',
-  },
-  {
-    initials: 'AP',
-    name: 'Andrea Pérez',
-    city: 'Maracaibo',
-    quote:
-      'Me encanta que muestran el sorteo en vivo. Es la primera vez que confío en algo así.',
-  },
-]
-
 export const schedule = reactive([])
 
 function rowToSchedule(row) {
