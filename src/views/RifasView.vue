@@ -1,8 +1,12 @@
 <script setup>
+import { computed } from 'vue'
 import { rifas } from '../data/content.js'
 import { useNav } from '../composables/useNav.js'
 
 const { selectRifa } = useNav()
+
+// Rifas deactivated from the admin panel stay out of the public listing.
+const activeRifas = computed(() => rifas.filter((r) => r.active))
 </script>
 
 <template>
@@ -11,7 +15,7 @@ const { selectRifa } = useNav()
     <p class="sub">Sorteos activos verificados. Desde $2 USD.</p>
 
     <div class="list">
-      <div v-for="r in rifas" :key="r.id" class="card">
+      <div v-for="r in activeRifas" :key="r.id" class="card">
         <div class="thumb">
           <span class="thumb-label">{{ r.imageLabel }}</span>
           <div class="badge" :style="{ background: r.badgeBg, color: r.badgeColor }">{{ r.badge }}</div>

@@ -49,7 +49,7 @@
   </g>
 
   <!-- gift boxes -->
-  <g transform="translate(392 176)">
+  <g transform="translate(368 148)">
     <rect x="0" y="24" width="64" height="52" rx="6" fill="#f59e0b"/>
     <rect x="0" y="24" width="64" height="16" rx="6" fill="#fbbf24"/>
     <rect x="27" y="24" width="10" height="52" fill="#b45309"/>
