@@ -86,10 +86,11 @@ async function handleSubmit() {
             <input v-model="form.price" required type="number" min="0.01" step="0.01" class="input" />
           </div>
           <div>
-            <label class="field-label">Números disponibles</label>
-            <input v-model="form.available" required type="number" min="1" step="1" class="input" />
+            <label class="field-label">Cantidad de números (ej: 100, 1000)</label>
+            <input v-model="form.available" required type="number" min="1" step="1" class="input" placeholder="Ej: 100" />
           </div>
         </div>
+        <p class="field-hint">Define el rango de números de la rifa (del 1 al que pongas aquí) y el tamaño de la grilla en Ventas.</p>
 
         <div class="field-row">
           <div>

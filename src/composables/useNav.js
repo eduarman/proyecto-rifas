@@ -46,9 +46,9 @@ export function useNav() {
   // Requires a real customer session before checkout: logged in goes
   // straight to payment; logged out goes through login/registro first,
   // carrying `next` forward to land back on the payment screen after.
-  function goCheckout(rifaId, qty) {
+  function goCheckout(rifaId, numbers) {
     menuOpen.value = false
-    const next = `/pago/${rifaId}?qty=${qty}`
+    const next = `/pago/${rifaId}?numbers=${numbers.join(',')}`
     if (customerSession.value) {
       router.push(next)
     } else {

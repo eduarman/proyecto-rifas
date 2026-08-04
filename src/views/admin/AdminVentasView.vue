@@ -13,6 +13,15 @@ function toggleExpanded(id) {
   expanded[id] = !expanded[id]
 }
 
+const gridOpen = reactive({})
+function toggleGrid(id) {
+  gridOpen[id] = !gridOpen[id]
+}
+
+function padNumber(n, width) {
+  return String(n).padStart(width, '0')
+}
+
 // "Vendido" = números con pedido pendiente o verificado. Los rechazados no
 // cuentan: esos números vuelven a quedar disponibles.
 const rows = computed(() =>
@@ -31,6 +40,14 @@ const rows = computed(() =>
       .filter((o) => o.status === 'verificado')
       .reduce((sum, o) => sum + Number(o.total || 0), 0)
 
+    // Número -> estado del pedido que lo tiene. Los rechazados no se
+    // registran acá, así que sus números quedan disponibles de nuevo.
+    const numberStatus = {}
+    for (const o of rifaOrders) {
+      if (o.status === 'rechazado') continue
+      for (const n of o.numbers || []) numberStatus[n] = o.status
+    }
+
     return {
       id: r.id,
       title: r.title,
@@ -42,6 +59,8 @@ const rows = computed(() =>
       restantes: Math.max(0, disponible - vendidos),
       pct,
       ingresos,
+      numberStatus,
+      numberWidth: String(disponible).length,
       // Most recent first, matches loadOrders()'s order — rejected orders
       // stay in the list so the admin can see why a number freed up.
       orders: rifaOrders,
@@ -101,19 +120,49 @@ const totales = computed(() =>
             <div><span class="stat-num">{{ r.restantes }}</span> restantes</div>
           </div>
 
-          <button class="sales-toggle" @click="toggleExpanded(r.id)">
-            {{ expanded[r.id] ? 'Ocultar compradores' : 'Ver compradores' }} ({{ r.orders.length }})
-          </button>
+          <div class="sales-toggles">
+            <button class="sales-toggle" @click="toggleExpanded(r.id)">
+              {{ expanded[r.id] ? 'Ocultar compradores' : 'Ver compradores' }} ({{ r.orders.length }})
+            </button>
+            <button v-if="r.active" class="sales-toggle" @click="toggleGrid(r.id)">
+              {{ gridOpen[r.id] ? 'Ocultar grilla de números' : 'Ver grilla de números' }}
+            </button>
+          </div>
 
           <div v-if="expanded[r.id]" class="sales-orders">
             <p v-if="r.orders.length === 0" class="empty-note">Todavía no hay pedidos para esta rifa.</p>
             <div v-for="o in r.orders" :key="o.id" class="sales-order-row">
               <div class="sales-order-main">
                 <div class="sales-order-name">{{ o.buyerName }}</div>
-                <div class="sales-order-meta">{{ o.qty }} número(s) · {{ o.paymentMethod }} · {{ o.buyerContact }}</div>
+                <div class="sales-order-meta">
+                  {{ o.qty }} número(s)<span v-if="o.numbers?.length"> ({{ o.numbers.join(', ') }})</span> ·
+                  {{ o.paymentMethod }} · {{ o.buyerContact }}
+                </div>
               </div>
               <span class="status-chip" :class="'status-' + o.status">{{ o.status }}</span>
             </div>
+          </div>
+
+          <div v-if="r.active && gridOpen[r.id]" class="numbers-grid-wrap">
+            <p v-if="r.disponible === 0" class="empty-note">Esta rifa no tiene cantidad de números definida.</p>
+            <template v-else>
+              <div class="numbers-grid" :style="{ '--num-w': (r.numberWidth * 9 + 16) + 'px' }">
+                <div
+                  v-for="n in r.disponible"
+                  :key="n"
+                  class="number-cell"
+                  :class="r.numberStatus[n] ? 'status-' + r.numberStatus[n] : 'free'"
+                  :title="r.numberStatus[n] ? r.numberStatus[n] : 'disponible'"
+                >
+                  {{ padNumber(n, r.numberWidth) }}
+                </div>
+              </div>
+              <div class="numbers-legend">
+                <span><i class="dot dot-free" />Disponible</span>
+                <span><i class="dot dot-pendiente" />Pendiente</span>
+                <span><i class="dot dot-verificado" />Verificado</span>
+              </div>
+            </template>
           </div>
         </div>
       </div>
@@ -200,8 +249,13 @@ const totales = computed(() =>
   color: var(--ink);
 }
 
-.sales-toggle {
+.sales-toggles {
   margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+}
+.sales-toggle {
   background: none;
   border: none;
   font-family: inherit;
@@ -213,6 +267,72 @@ const totales = computed(() =>
 }
 .sales-toggle:hover {
   color: var(--brand-dark);
+}
+.numbers-grid-wrap {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-soft);
+}
+.numbers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--num-w, 48px), 1fr));
+  gap: 5px;
+  max-height: 280px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+.number-cell {
+  font-family: monospace;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-align: center;
+  padding: 6px 3px;
+  border-radius: 6px;
+  border: 1px solid var(--line-soft);
+}
+.number-cell.free {
+  background: #fff;
+  color: var(--slate-400);
+}
+.number-cell.status-pendiente {
+  background: #fef9c3;
+  color: #a16207;
+  border-color: #fde68a;
+}
+.number-cell.status-verificado {
+  background: #dcfce7;
+  color: #15803d;
+  border-color: #bbf7d0;
+}
+.numbers-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 12px;
+  color: var(--slate-500);
+}
+.numbers-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.dot-free {
+  background: #fff;
+  border: 1px solid var(--line-soft);
+}
+.dot-pendiente {
+  background: #fef9c3;
+  border: 1px solid #fde68a;
+}
+.dot-verificado {
+  background: #dcfce7;
+  border: 1px solid #bbf7d0;
 }
 .sales-orders {
   margin-top: 12px;

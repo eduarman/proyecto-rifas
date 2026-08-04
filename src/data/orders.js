@@ -21,20 +21,32 @@ function rowToOrder(row) {
     proofPath: row.proof_path,
     status: row.status,
     createdAt: row.created_at,
+    numbers: (row.order_numbers || []).map((n) => n.number).sort((a, b) => a - b),
   }
 }
+
+const ORDER_SELECT = '*, order_numbers(number)'
 
 // Historial del cliente autenticado: la política RLS orders_select_own ya
 // filtra por su propio user_id, no hace falta un .eq() en el cliente.
 export async function fetchMyOrders() {
-  const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false })
+  const { data, error } = await supabase.from('orders').select(ORDER_SELECT).order('created_at', { ascending: false })
   if (error) throw error
   return data.map(rowToOrder)
 }
 
 export async function loadOrders() {
-  const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false })
+  const { data, error } = await supabase.from('orders').select(ORDER_SELECT).order('created_at', { ascending: false })
   if (!error && data) orders.splice(0, orders.length, ...data.map(rowToOrder))
+}
+
+// Números ya ocupados (pendientes o verificados) de una rifa, para el
+// selector de números de DetailView. RPC en vez de una consulta directa
+// porque el público no tiene permiso de lectura sobre orders.
+export async function fetchTakenNumbers(rifaId) {
+  const { data, error } = await supabase.rpc('taken_numbers_for_rifa', { p_rifa_id: rifaId })
+  if (error) throw error
+  return data || []
 }
 
 // Anonymous customers can upload (insert-only storage policy) but can't read
@@ -52,25 +64,37 @@ export async function getProofSignedUrl(path) {
   return data.signedUrl
 }
 
+// Crea el pedido y reserva sus números atómicamente vía RPC (ver
+// create_order_with_numbers en la migración 002): si algún número ya fue
+// tomado por otro pedido entre que el comprador lo vio libre y confirmó la
+// compra, la función entera falla con unique_violation (código 23505) y no
+// queda un pedido huérfano sin números.
 export async function addOrder(data) {
-  const row = {
-    user_id: data.userId || null,
-    rifa_id: data.rifaId,
-    rifa_title: data.rifaTitle,
-    qty: data.qty,
-    unit_price: data.unitPrice,
-    total: data.total,
-    payment_method: data.paymentMethod,
-    buyer_name: data.buyerName,
-    buyer_contact: data.buyerContact,
-    proof_path: data.proofPath || null,
+  const { data: orderId, error } = await supabase.rpc('create_order_with_numbers', {
+    p_rifa_id: data.rifaId,
+    p_rifa_title: data.rifaTitle,
+    p_numbers: data.numbers,
+    p_unit_price: data.unitPrice,
+    p_payment_method: data.paymentMethod,
+    p_buyer_name: data.buyerName,
+    p_buyer_contact: data.buyerContact,
+    p_proof_path: data.proofPath || null,
+    p_user_id: data.userId || null,
+  })
+  if (error) {
+    if (error.code === '23505') {
+      throw new Error('Uno o más números que elegiste ya fueron reservados por otra persona. Elige otros.')
+    }
+    throw error
   }
-  const { error } = await supabase.from('orders').insert(row)
-  if (error) throw error
-  // Anonymous inserts can't SELECT the row back (RLS is admin-only for
-  // reads), so the confirmation screen uses what we already know locally
-  // instead of re-querying it.
-  return { ...data, id: null, status: 'pendiente', createdAt: new Date().toISOString() }
+  return {
+    ...data,
+    id: orderId,
+    qty: data.numbers.length,
+    total: data.unitPrice * data.numbers.length,
+    status: 'pendiente',
+    createdAt: new Date().toISOString(),
+  }
 }
 
 export async function setOrderStatus(id, status) {

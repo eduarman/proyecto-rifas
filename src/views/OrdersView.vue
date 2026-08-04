@@ -53,6 +53,7 @@ onMounted(async () => {
           <span>{{ order.qty }} {{ order.qty === 1 ? 'número' : 'números' }} · {{ order.paymentMethod }}</span>
           <span class="total">${{ order.total }}</span>
         </div>
+        <div v-if="order.numbers?.length" class="order-numbers">{{ order.numbers.join(', ') }}</div>
         <div class="date">{{ formatDate(order.createdAt) }}</div>
       </div>
     </div>
@@ -153,6 +154,12 @@ onMounted(async () => {
   font-weight: 700;
   color: var(--ink);
   font-size: 15px;
+}
+.order-numbers {
+  margin-top: 6px;
+  font-family: monospace;
+  font-size: 12px;
+  color: var(--slate-500);
 }
 .date {
   margin-top: 6px;

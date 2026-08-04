@@ -2,12 +2,12 @@
 import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { rifas } from '../data/content.js'
+import { fetchTakenNumbers } from '../data/orders.js'
 import { useNav } from '../composables/useNav.js'
 
 const route = useRoute()
 const { goRifas, goCheckout } = useNav()
 
-const qty = ref(1)
 // Deactivated rifas are excluded entirely, same as from the public listing —
 // falls back to the first active rifa rather than a 404 for a bad/stale id.
 const selectedRifa = computed(
@@ -15,25 +15,63 @@ const selectedRifa = computed(
     rifas.find((r) => r.id === route.params.id && r.active) ||
     rifas.find((r) => r.active),
 )
-const total = computed(() => qty.value * (selectedRifa.value?.price ?? 0))
 
-// Reset the quantity whenever the visited rifa changes.
+const selectedNumbers = ref([])
+const takenNumbers = ref([])
+const loadingNumbers = ref(false)
+const numbersError = ref('')
+
+const totalNumbers = computed(() => selectedRifa.value?.available || 0)
+const numberWidth = computed(() => String(totalNumbers.value).length)
+const allNumbers = computed(() => Array.from({ length: totalNumbers.value }, (_, i) => i + 1))
+const takenSet = computed(() => new Set(takenNumbers.value))
+
+function pad(n) {
+  return String(n).padStart(numberWidth.value, '0')
+}
+function isTaken(n) {
+  return takenSet.value.has(n)
+}
+function isSelected(n) {
+  return selectedNumbers.value.includes(n)
+}
+function toggleNumber(n) {
+  if (isTaken(n)) return
+  const idx = selectedNumbers.value.indexOf(n)
+  if (idx === -1) selectedNumbers.value.push(n)
+  else selectedNumbers.value.splice(idx, 1)
+}
+
+const total = computed(() => selectedNumbers.value.length * (selectedRifa.value?.price ?? 0))
+
+async function loadTaken(rifaId) {
+  selectedNumbers.value = []
+  takenNumbers.value = []
+  numbersError.value = ''
+  if (!rifaId) return
+  loadingNumbers.value = true
+  try {
+    takenNumbers.value = await fetchTakenNumbers(rifaId)
+  } catch {
+    numbersError.value = 'No se pudo cargar la disponibilidad de números. Recarga la página.'
+  } finally {
+    loadingNumbers.value = false
+  }
+}
+
+// Reload availability whenever the visited rifa changes.
 watch(
-  () => route.params.id,
-  () => {
-    qty.value = 1
-  },
+  () => selectedRifa.value?.id,
+  (id) => loadTaken(id),
+  { immediate: true },
 )
 
-function incQty() {
-  qty.value += 1
-}
-function decQty() {
-  qty.value = Math.max(1, qty.value - 1)
-}
-
 function handleBuy() {
-  goCheckout(selectedRifa.value.id, qty.value)
+  if (selectedNumbers.value.length === 0) return
+  goCheckout(
+    selectedRifa.value.id,
+    [...selectedNumbers.value].sort((a, b) => a - b),
+  )
 }
 </script>
 
@@ -71,13 +109,27 @@ function handleBuy() {
             <div class="bar-fill" :style="{ width: selectedRifa.sold + '%' }" />
           </div>
 
-          <!-- shown in-flow on mobile only; desktop uses the sidebar's own control -->
-          <div class="qty-mobile">
-            <label class="qty-label">Cantidad de números</label>
-            <div class="qty">
-              <button class="qty-btn" @click="decQty">−</button>
-              <span class="qty-val">{{ qty }}</span>
-              <button class="qty-btn" @click="incQty">+</button>
+          <div class="numbers-section">
+            <label class="qty-label">Elige tus números ({{ selectedNumbers.length }} seleccionados)</label>
+            <p v-if="numbersError" class="numbers-error">{{ numbersError }}</p>
+            <p v-else-if="loadingNumbers" class="numbers-loading">Cargando disponibilidad…</p>
+            <div v-else class="numbers-grid" :style="{ '--num-w': (numberWidth * 9 + 16) + 'px' }">
+              <button
+                v-for="n in allNumbers"
+                :key="n"
+                type="button"
+                class="number-cell"
+                :class="{ taken: isTaken(n), selected: isSelected(n) }"
+                :disabled="isTaken(n)"
+                @click="toggleNumber(n)"
+              >
+                {{ pad(n) }}
+              </button>
+            </div>
+            <div class="numbers-legend">
+              <span><i class="dot dot-free" />Disponible</span>
+              <span><i class="dot dot-selected" />Elegido</span>
+              <span><i class="dot dot-taken" />Ocupado</span>
             </div>
           </div>
         </div>
@@ -95,19 +147,14 @@ function handleBuy() {
             Sorteo el {{ selectedRifa.date }}
           </div>
 
-          <label class="qty-label">Cantidad de números</label>
-          <div class="qty">
-            <button class="qty-btn" @click="decQty">−</button>
-            <span class="qty-val">{{ qty }}</span>
-            <button class="qty-btn" @click="incQty">+</button>
-          </div>
+          <div class="selected-summary">{{ selectedNumbers.length }} número(s) seleccionado(s)</div>
 
           <div class="total-row">
             <span class="total-label-desktop">Total</span>
             <span class="total-amount-desktop">${{ total }}</span>
           </div>
 
-          <button class="buy" @click="handleBuy">Comprar números</button>
+          <button class="buy" :disabled="selectedNumbers.length === 0" @click="handleBuy">Comprar números</button>
           <div class="secure-note">
             <svg width="12" height="12" viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V6l8-4z" fill="#94a3b8" /></svg>
             Pago 100% seguro y verificado
@@ -122,7 +169,7 @@ function handleBuy() {
         <div class="total-label">Total</div>
         <div class="total-amount">${{ total }}</div>
       </div>
-      <button class="buy" @click="handleBuy">Comprar números</button>
+      <button class="buy" :disabled="selectedNumbers.length === 0" @click="handleBuy">Comprar números</button>
     </div>
   </div>
 </template>
@@ -227,26 +274,86 @@ function handleBuy() {
   display: block;
   margin-bottom: 10px;
 }
-.qty {
-  display: flex;
-  align-items: center;
-  gap: 16px;
+.numbers-section {
+  margin-top: 4px;
 }
-.qty-btn {
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
+.numbers-error {
+  font-size: 13px;
+  color: #dc2626;
+}
+.numbers-loading {
+  font-size: 13px;
+  color: var(--slate-500);
+}
+.numbers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--num-w, 52px), 1fr));
+  gap: 6px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 4px 4px 4px 0;
+  margin-bottom: 12px;
+}
+.number-cell {
+  font-family: monospace;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 8px 4px;
+  border-radius: 8px;
   border: 1px solid var(--input-line);
   background: #fff;
-  font-size: 18px;
-  font-weight: 700;
+  color: var(--slate-700);
   cursor: pointer;
-}
-.qty-val {
-  font-size: 20px;
-  font-weight: 800;
-  width: 26px;
   text-align: center;
+}
+.number-cell:hover:not(:disabled) {
+  border-color: var(--brand);
+}
+.number-cell.selected {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}
+.number-cell.taken {
+  background: var(--panel);
+  color: var(--slate-400);
+  border-color: var(--line-soft);
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+.numbers-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 12px;
+  color: var(--slate-500);
+}
+.numbers-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.dot-free {
+  background: #fff;
+  border: 1px solid var(--input-line);
+}
+.dot-selected {
+  background: var(--brand);
+}
+.dot-taken {
+  background: var(--slate-400);
+}
+.selected-summary {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--slate-700);
+  margin-bottom: 18px;
 }
 
 .right {
@@ -289,6 +396,10 @@ function handleBuy() {
   font-weight: 700;
   font-size: 15px;
   cursor: pointer;
+}
+.buy:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 @media (min-width: 1024px) {
@@ -348,8 +459,8 @@ function handleBuy() {
     height: 8px;
     margin-bottom: 0;
   }
-  .qty-mobile {
-    display: none;
+  .numbers-grid {
+    max-height: 420px;
   }
 
   .right {
@@ -384,16 +495,6 @@ function handleBuy() {
     display: flex;
     align-items: center;
     gap: 6px;
-  }
-  .purchase-card .qty {
-    margin-bottom: 22px;
-  }
-  .purchase-card .qty-btn {
-    width: 40px;
-    height: 40px;
-  }
-  .purchase-card .qty-btn:hover {
-    background: #f8fafc;
   }
   .total-row {
     display: flex;

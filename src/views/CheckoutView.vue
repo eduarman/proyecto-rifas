@@ -17,7 +17,15 @@ const selectedRifa = computed(
     rifas.find((r) => r.id === route.params.id && r.active) ||
     rifas.find((r) => r.active),
 )
-const qty = computed(() => Math.max(1, Number(route.query.qty) || 1))
+// Numbers were already picked on the rifa's detail page; this screen only
+// collects payment info and confirms them.
+const numbers = computed(() =>
+  String(route.query.numbers || '')
+    .split(',')
+    .map(Number)
+    .filter((n) => Number.isInteger(n) && n > 0),
+)
+const qty = computed(() => numbers.value.length)
 const total = computed(() => qty.value * (selectedRifa.value?.price ?? 0))
 
 function goBack() {
@@ -93,17 +101,18 @@ async function handleSubmit() {
       userId: accountUser?.id,
       rifaId: selectedRifa.value.id,
       rifaTitle: selectedRifa.value.title,
-      qty: qty.value,
+      numbers: numbers.value,
       unitPrice: selectedRifa.value.price,
-      total: total.value,
       paymentMethod: currentMethod.value.label,
       buyerName: buyerName.value,
       buyerContact: buyerContact.value,
       proofPath,
     })
     submitted.value = true
-  } catch {
-    submitError.value = 'Ocurrió un error al enviar tu comprobante. Intenta de nuevo.'
+  } catch (e) {
+    // addOrder() throws a specific message when a chosen number was just
+    // taken by someone else (race between picking and confirming payment).
+    submitError.value = e?.message || 'Ocurrió un error al enviar tu comprobante. Intenta de nuevo.'
   } finally {
     submitting.value = false
   }
@@ -124,6 +133,9 @@ async function handleSubmit() {
     </div>
 
     <p v-if="!selectedRifa" class="empty-state">No hay rifas disponibles en este momento.</p>
+    <p v-else-if="numbers.length === 0" class="empty-state">
+      No seleccionaste ningún número. Vuelve a la rifa y elige al menos uno.
+    </p>
 
     <div v-else-if="submitted" class="panel confirm-panel">
       <div class="confirm-icon">✓</div>
@@ -140,6 +152,7 @@ async function handleSubmit() {
       <p class="lead">
         {{ selectedRifa.title }} · {{ qty }} número(s) · Total <strong>${{ total }}</strong>
       </p>
+      <p class="chosen-numbers">Números: {{ numbers.join(', ') }}</p>
 
       <label class="field-label">Método de pago</label>
       <div class="method-tabs">
@@ -227,6 +240,16 @@ async function handleSubmit() {
   color: var(--slate-500);
   margin: 0 0 22px;
   line-height: 1.6;
+}
+.chosen-numbers {
+  font-family: monospace;
+  font-size: 12.5px;
+  color: var(--slate-500);
+  background: var(--panel);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: -14px 0 20px;
+  word-break: break-word;
 }
 .field-label {
   font-size: 12.5px;

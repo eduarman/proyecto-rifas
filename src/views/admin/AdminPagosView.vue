@@ -38,8 +38,8 @@ async function viewProof(path) {
               <span class="status-chip" :class="'status-' + o.status">{{ o.status }}</span>
             </div>
             <div class="row-desc wrap">
-              {{ o.rifaTitle }} · {{ o.qty }} número(s) · ${{ o.total }} · {{ o.paymentMethod }} ·
-              contacto: {{ o.buyerContact }}
+              {{ o.rifaTitle }} · {{ o.qty }} número(s)<span v-if="o.numbers?.length"> ({{ o.numbers.join(', ') }})</span> ·
+              ${{ o.total }} · {{ o.paymentMethod }} · contacto: {{ o.buyerContact }}
             </div>
           </div>
           <div class="row-actions">
