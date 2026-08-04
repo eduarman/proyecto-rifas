@@ -1,12 +1,18 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { rifas } from '../data/content.js'
+import { rifas, loadRifas } from '../data/content.js'
 import { fetchTakenNumbers } from '../data/orders.js'
 import { useNav } from '../composables/useNav.js'
 
 const route = useRoute()
 const { goRifas, goCheckout } = useNav()
+
+// content.js only fetches rifas once, at module load — refetch here so a
+// tab open since before this rifa was created/edited picks up the change.
+onMounted(() => {
+  loadRifas()
+})
 
 // Deactivated rifas are excluded entirely, same as from the public listing —
 // falls back to the first active rifa rather than a 404 for a bad/stale id.

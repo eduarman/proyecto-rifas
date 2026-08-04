@@ -1,9 +1,16 @@
 <script setup>
-import { computed } from 'vue'
-import { rifas } from '../data/content.js'
+import { computed, onMounted } from 'vue'
+import { rifas, loadRifas } from '../data/content.js'
 import { useNav } from '../composables/useNav.js'
 
 const { selectRifa } = useNav()
+
+// content.js only fetches rifas once, at module load — a tab left open
+// since before an admin created/toggled a rifa would otherwise keep
+// showing the stale list. Refetch every time this page is visited.
+onMounted(() => {
+  loadRifas()
+})
 
 // Rifas deactivated from the admin panel stay out of the public listing.
 const activeRifas = computed(() => rifas.filter((r) => r.active))

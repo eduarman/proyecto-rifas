@@ -1,13 +1,21 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import BaseIcon from '../components/BaseIcon.vue'
 import BrandLogo from '../components/BrandLogo.vue'
 import heroPremio from '../assets/hero-premio.svg'
-import { steps, features, schedule, faqs } from '../data/content.js'
+import { steps, features, schedule, faqs, loadRifas } from '../data/content.js'
 import { winners } from '../data/winners.js'
 import { useNav } from '../composables/useNav.js'
 
 const { goRifas, goSection, goAdmin } = useNav()
+
+// content.js only fetches rifas once, at module load — refetch on every
+// visit to Home so a tab open since before a rifa was created/toggled
+// picks up the change (Home doesn't list rifas directly, but RifasView
+// and DetailView read the same shared reactive array).
+onMounted(() => {
+  loadRifas()
+})
 
 // Only winners with a comment read as testimonials; the rest are just
 // prize-delivery records with nothing to quote on the home page.
