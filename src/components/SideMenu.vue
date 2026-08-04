@@ -1,7 +1,14 @@
 <script setup>
+import { computed } from 'vue'
 import { useNav } from '../composables/useNav.js'
+import { customerSession, signOut } from '../composables/useCustomerAuth.js'
 
-const { goRifas, goLogin, goSection, toggleMenu } = useNav()
+const { goRifas, goLogin, goOrders, goSection, toggleMenu } = useNav()
+
+const displayName = computed(() => {
+  const user = customerSession.value?.user
+  return user?.user_metadata?.full_name?.split(' ')[0] || user?.email
+})
 </script>
 
 <template>
@@ -17,7 +24,12 @@ const { goRifas, goLogin, goSection, toggleMenu } = useNav()
       <a href="#como-funciona" class="item" @click.prevent="goSection('como-funciona')">Cómo funciona</a>
       <a href="#testimonios" class="item" @click.prevent="goSection('testimonios')">Ganadores</a>
       <a href="#preguntas" class="item" @click.prevent="goSection('preguntas')">Preguntas</a>
-      <a href="#" class="item last" @click.prevent="goLogin">Ingresar</a>
+      <template v-if="customerSession">
+        <span class="item">Hola, {{ displayName }}</span>
+        <a href="#" class="item" @click.prevent="goOrders">Mis compras</a>
+        <a href="#" class="item last" @click.prevent="signOut">Salir</a>
+      </template>
+      <a v-else href="#" class="item last" @click.prevent="goLogin()">Ingresar</a>
       <button class="cta" @click="goRifas">Participar</button>
     </div>
   </div>

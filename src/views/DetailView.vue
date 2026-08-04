@@ -122,7 +122,7 @@ function handleBuy() {
         <div class="total-label">Total</div>
         <div class="total-amount">${{ total }}</div>
       </div>
-      <button class="buy" @click="goLogin">Comprar números</button>
+      <button class="buy" @click="handleBuy">Comprar números</button>
     </div>
   </div>
 </template>

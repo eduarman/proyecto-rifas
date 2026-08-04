@@ -5,6 +5,7 @@ import BrandLogo from '../components/BrandLogo.vue'
 import { rifas } from '../data/content.js'
 import { addOrder, uploadProof } from '../data/orders.js'
 import { useNav } from '../composables/useNav.js'
+import { customerSession } from '../composables/useCustomerAuth.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -66,8 +67,11 @@ const paymentMethods = [
 const selectedMethod = ref(paymentMethods[0].id)
 const currentMethod = computed(() => paymentMethods.find((m) => m.id === selectedMethod.value))
 
-const buyerName = ref('')
-const buyerContact = ref('')
+// El router ya garantiza sesión (meta.requiresCustomer) antes de llegar aquí,
+// así que precargamos nombre/correo de la cuenta — el comprador puede editarlos.
+const accountUser = customerSession.value?.user
+const buyerName = ref(accountUser?.user_metadata?.full_name || '')
+const buyerContact = ref(accountUser?.email || '')
 const fileName = ref('')
 const selectedFile = ref(null)
 const submitted = ref(false)
@@ -86,6 +90,7 @@ async function handleSubmit() {
   try {
     const proofPath = selectedFile.value ? await uploadProof(selectedFile.value) : null
     await addOrder({
+      userId: accountUser?.id,
       rifaId: selectedRifa.value.id,
       rifaTitle: selectedRifa.value.title,
       qty: qty.value,

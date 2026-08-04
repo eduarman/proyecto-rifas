@@ -9,6 +9,7 @@ export const orders = reactive([])
 function rowToOrder(row) {
   return {
     id: row.id,
+    userId: row.user_id,
     rifaId: row.rifa_id,
     rifaTitle: row.rifa_title,
     qty: row.qty,
@@ -21,6 +22,14 @@ function rowToOrder(row) {
     status: row.status,
     createdAt: row.created_at,
   }
+}
+
+// Historial del cliente autenticado: la política RLS orders_select_own ya
+// filtra por su propio user_id, no hace falta un .eq() en el cliente.
+export async function fetchMyOrders() {
+  const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false })
+  if (error) throw error
+  return data.map(rowToOrder)
 }
 
 export async function loadOrders() {
@@ -45,6 +54,7 @@ export async function getProofSignedUrl(path) {
 
 export async function addOrder(data) {
   const row = {
+    user_id: data.userId || null,
     rifa_id: data.rifaId,
     rifa_title: data.rifaTitle,
     qty: data.qty,

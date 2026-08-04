@@ -7,9 +7,9 @@ import { useNav } from './composables/useNav.js'
 
 const route = useRoute()
 const { menuOpen } = useNav()
-// Login, Checkout and Admin are full-screen states without the public app chrome.
+// Login, Registro, Checkout and Admin are full-screen states without the public app chrome.
 const isBareLayout = computed(() =>
-  route.name === 'login' || route.name === 'checkout' || route.path.startsWith('/admin'),
+  route.name === 'login' || route.name === 'register' || route.name === 'checkout' || route.path.startsWith('/admin'),
 )
 </script>
 

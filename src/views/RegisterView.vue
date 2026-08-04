@@ -3,44 +3,55 @@ import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import BrandLogo from '../components/BrandLogo.vue'
 import { useNav } from '../composables/useNav.js'
-import { loginAdmin } from '../composables/useAuth.js'
-import { signIn, signInWithGoogle } from '../composables/useCustomerAuth.js'
+import { signUp, signInWithGoogle } from '../composables/useCustomerAuth.js'
 
 const route = useRoute()
 const router = useRouter()
-const { goHome, goRegister } = useNav()
+const { goHome, goLogin } = useNav()
 
+const fullName = ref('')
 const email = ref('')
 const password = ref('')
+const confirmPassword = ref('')
 const error = ref('')
 const submitting = ref(false)
-const isAdminLogin = ref(!!route.query.redirect)
+const awaitingConfirmation = ref(false)
+
 const next = typeof route.query.next === 'string' ? route.query.next : ''
 
 async function handleSubmit() {
-  if (isAdminLogin.value) {
-    if (await loginAdmin(email.value, password.value)) {
-      router.push(route.query.redirect.toString())
-    } else {
-      error.value = 'Credenciales de administrador incorrectas.'
-    }
+  error.value = ''
+
+  if (password.value.length < 6) {
+    error.value = 'La contraseña debe tener al menos 6 caracteres.'
+    return
+  }
+  if (password.value !== confirmPassword.value) {
+    error.value = 'Las contraseñas no coinciden.'
     return
   }
 
   submitting.value = true
-  const { error: signInError } = await signIn(email.value, password.value)
+  const { data, error: signUpError } = await signUp({
+    email: email.value,
+    password: password.value,
+    fullName: fullName.value,
+  })
   submitting.value = false
 
-  if (signInError) {
-    error.value = signInError.message === 'Invalid login credentials'
-      ? 'Correo o contraseña incorrectos.'
-      : signInError.message
+  if (signUpError) {
+    error.value = signUpError.message === 'User already registered'
+      ? 'Ya existe una cuenta con ese correo.'
+      : signUpError.message
     return
   }
 
-  // `next` carries the buyer back to checkout when login was triggered
-  // from "Comprar números"; otherwise land on Home as before.
-  next ? router.push(next) : goHome()
+  // Con confirmación de correo activada, Supabase no devuelve sesión todavía.
+  if (data.session) {
+    next ? router.push(next) : goHome()
+  } else {
+    awaitingConfirmation.value = true
+  }
 }
 
 async function handleGoogle() {
@@ -63,50 +74,54 @@ async function handleGoogle() {
       <BrandLogo :size="34" :label="20" />
     </div>
 
-    <form class="panel" @submit.prevent="handleSubmit">
-      <template v-if="isAdminLogin">
-        <h1 class="title">Acceso administrador</h1>
-        <p class="lead">Ingresa con tus credenciales de administrador para continuar.</p>
-      </template>
-      <template v-else>
-        <h1 class="title">Ingresa a tu cuenta</h1>
-        <p class="lead">Continúa para completar tu compra de forma segura.</p>
-      </template>
+    <div v-if="awaitingConfirmation" class="panel">
+      <h1 class="title">Revisa tu correo</h1>
+      <p class="lead">
+        Te enviamos un enlace de confirmación a <strong>{{ email }}</strong>. Ábrelo para activar
+        tu cuenta y luego inicia sesión.
+      </p>
+      <button class="submit" @click="goLogin(next ? { next } : undefined)">Ir a iniciar sesión</button>
+    </div>
+
+    <form v-else class="panel" @submit.prevent="handleSubmit">
+      <h1 class="title">Crea tu cuenta</h1>
+      <p class="lead">Regístrate para participar en las rifas.</p>
+
+      <label class="field-label">Nombre completo</label>
+      <input v-model="fullName" required class="input" placeholder="Tu nombre" />
 
       <label class="field-label">Correo electrónico</label>
-      <input v-model="email" type="email" placeholder="tucorreo@ejemplo.com" class="input" />
+      <input v-model="email" type="email" required placeholder="tucorreo@ejemplo.com" class="input" />
 
-      <div class="pw-row">
-        <label class="field-label">Contraseña</label>
-        <a v-if="!isAdminLogin" href="#" class="link-sm">¿Olvidaste?</a>
-      </div>
-      <input v-model="password" type="password" placeholder="••••••••" class="input" />
+      <label class="field-label">Contraseña</label>
+      <input v-model="password" type="password" required placeholder="Mínimo 6 caracteres" class="input" />
+
+      <label class="field-label">Confirmar contraseña</label>
+      <input v-model="confirmPassword" type="password" required placeholder="••••••••" class="input" />
 
       <p v-if="error" class="error-msg">{{ error }}</p>
 
       <button type="submit" class="submit" :disabled="submitting">
-        {{ submitting ? 'Ingresando…' : 'Ingresar' }}
+        {{ submitting ? 'Creando cuenta…' : 'Crear cuenta' }}
       </button>
 
-      <template v-if="!isAdminLogin">
-        <div class="divider">
-          <div class="line" />
-          <span class="or">o continúa con</span>
-          <div class="line" />
-        </div>
+      <div class="divider">
+        <div class="line" />
+        <span class="or">o continúa con</span>
+        <div class="line" />
+      </div>
 
-        <button type="button" class="google" @click="handleGoogle">
-          <svg width="16" height="16" viewBox="0 0 24 24">
-            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
-            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.99.66-2.25 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.85A11 11 0 0012 23z" />
-            <path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 010-4.2V7.05H2.18a11 11 0 000 9.9l3.66-2.85z" />
-            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1a11 11 0 00-9.82 6.05l3.66 2.85C6.71 7.3 9.14 5.38 12 5.38z" />
-          </svg>
-          Continuar con Google
-        </button>
+      <button type="button" class="google" @click="handleGoogle">
+        <svg width="16" height="16" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.99.66-2.25 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.85A11 11 0 0012 23z" />
+          <path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 010-4.2V7.05H2.18a11 11 0 000 9.9l3.66-2.85z" />
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1a11 11 0 00-9.82 6.05l3.66 2.85C6.71 7.3 9.14 5.38 12 5.38z" />
+        </svg>
+        Continuar con Google
+      </button>
 
-        <p class="signup">¿No tienes cuenta? <a href="#" @click.prevent="goRegister(next ? { next } : undefined)">Regístrate gratis</a></p>
-      </template>
+      <p class="signup">¿Ya tienes cuenta? <a href="#" @click.prevent="goLogin(next ? { next } : undefined)">Ingresa aquí</a></p>
     </form>
   </div>
 </template>
@@ -209,19 +224,10 @@ async function handleGoogle() {
 .input:focus {
   border-color: var(--brand);
 }
-.pw-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
-}
 .error-msg {
   font-size: 12.5px;
   color: #dc2626;
   margin: -6px 0 14px;
-}
-.link-sm {
-  font-size: 12px;
 }
 .submit {
   width: 100%;
@@ -234,6 +240,10 @@ async function handleGoogle() {
   font-weight: 700;
   cursor: pointer;
   margin-top: 4px;
+}
+.submit:disabled {
+  opacity: 0.65;
+  cursor: default;
 }
 .divider {
   display: flex;

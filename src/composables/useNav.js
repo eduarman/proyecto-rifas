@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { customerSession } from './useCustomerAuth.js'
 
 // Mobile drawer state is shared app-wide, so a module-level ref is enough —
 // no need for a full store now that the router owns the current view.
@@ -22,9 +23,19 @@ export function useNav() {
     router.push({ name: 'rifas' })
   }
 
-  function goLogin() {
+  function goLogin(query) {
     menuOpen.value = false
-    router.push({ name: 'login' })
+    router.push({ name: 'login', query })
+  }
+
+  function goRegister(query) {
+    menuOpen.value = false
+    router.push({ name: 'register', query })
+  }
+
+  function goOrders() {
+    menuOpen.value = false
+    router.push({ name: 'orders' })
   }
 
   function goAdmin() {
@@ -32,11 +43,17 @@ export function useNav() {
     router.push({ name: 'admin' })
   }
 
-  // Mock login gate before checkout: login carries `next` forward and lands
-  // the buyer on the payment screen for this rifa/qty once "logged in".
+  // Requires a real customer session before checkout: logged in goes
+  // straight to payment; logged out goes through login/registro first,
+  // carrying `next` forward to land back on the payment screen after.
   function goCheckout(rifaId, qty) {
     menuOpen.value = false
-    router.push({ name: 'login', query: { next: `/pago/${rifaId}?qty=${qty}` } })
+    const next = `/pago/${rifaId}?qty=${qty}`
+    if (customerSession.value) {
+      router.push(next)
+    } else {
+      router.push({ name: 'login', query: { next } })
+    }
   }
 
   function selectRifa(id) {
@@ -50,5 +67,5 @@ export function useNav() {
     router.push({ name: 'home', hash: '#' + id })
   }
 
-  return { menuOpen, toggleMenu, goHome, goRifas, goLogin, goAdmin, goCheckout, selectRifa, goSection }
+  return { menuOpen, toggleMenu, goHome, goRifas, goLogin, goRegister, goOrders, goAdmin, goCheckout, selectRifa, goSection }
 }

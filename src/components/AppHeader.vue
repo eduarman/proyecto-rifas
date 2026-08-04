@@ -1,8 +1,15 @@
 <script setup>
+import { computed } from 'vue'
 import BrandLogo from './BrandLogo.vue'
 import { useNav } from '../composables/useNav.js'
+import { customerSession, signOut } from '../composables/useCustomerAuth.js'
 
-const { goHome, goRifas, goLogin, goSection, toggleMenu } = useNav()
+const { goHome, goRifas, goLogin, goOrders, goSection, toggleMenu } = useNav()
+
+const displayName = computed(() => {
+  const user = customerSession.value?.user
+  return user?.user_metadata?.full_name?.split(' ')[0] || user?.email
+})
 </script>
 
 <template>
@@ -20,7 +27,12 @@ const { goHome, goRifas, goLogin, goSection, toggleMenu } = useNav()
       <a href="#preguntas" @click.prevent="goSection('preguntas')">Preguntas</a>
     </nav>
     <div class="actions-desktop">
-      <a href="#" class="login-link" @click.prevent="goLogin">Ingresar</a>
+      <template v-if="customerSession">
+        <span class="user-name">Hola, {{ displayName }}</span>
+        <a href="#" class="login-link" @click.prevent="goOrders">Mis compras</a>
+        <a href="#" class="login-link" @click.prevent="signOut">Salir</a>
+      </template>
+      <a v-else href="#" class="login-link" @click.prevent="goLogin()">Ingresar</a>
       <button class="cta" @click="goRifas">Participar</button>
     </div>
 
@@ -98,6 +110,11 @@ const { goHome, goRifas, goLogin, goSection, toggleMenu } = useNav()
     color: var(--ink);
     font-weight: 600;
     font-size: 15px;
+  }
+  .user-name {
+    color: var(--slate-700);
+    font-size: 14px;
+    font-weight: 600;
   }
   .cta {
     background: var(--brand);
