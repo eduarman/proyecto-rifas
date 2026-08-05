@@ -43,7 +43,9 @@ const isBareLayout = computed(() =>
   margin: 0 auto;
   background: #fff;
 }
-
+.eduardo{
+  color: red;
+}
 @media (min-width: 1024px) {
   .frame {
     max-width: 100%;
