@@ -178,8 +178,16 @@ async function handleSubmit() {
       <label class="field-label">Nombre completo</label>
       <input v-model="buyerName" required class="input" placeholder="Ej: Ana Torres" />
 
-      <label class="field-label">Correo o teléfono de contacto</label>
-      <input v-model="buyerContact" required class="input" placeholder="Ej: ana@correo.com" />
+      <label class="field-label">Correo electrónico de contacto</label>
+      <input
+        v-model="buyerContact"
+        type="email"
+        required
+        class="input"
+        placeholder="Ej: ana@correo.com"
+        title="Ingresa un correo electrónico válido"
+      />
+      <p class="field-hint">Aquí te avisaremos cuando confirmemos tu compra.</p>
 
       <label class="field-label">Comprobante de pago</label>
       <input type="file" accept="image/*,.pdf" required class="input file-input" @change="handleFile" />
@@ -323,6 +331,11 @@ async function handleSubmit() {
   font-size: 12.5px;
   color: var(--slate-500);
   margin: -10px 0 16px;
+}
+.field-hint {
+  font-size: 12.5px;
+  color: var(--slate-500);
+  margin: -12px 0 16px;
 }
 .error-msg {
   font-size: 12.5px;

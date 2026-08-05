@@ -87,6 +87,7 @@ export async function addOrder(data) {
     }
     throw error
   }
+  notifyOrderByEmail(orderId, 'received')
   return {
     ...data,
     id: orderId,
@@ -102,4 +103,14 @@ export async function setOrderStatus(id, status) {
   if (error) throw error
   const order = orders.find((o) => o.id === id)
   if (order) order.status = status
+  if (status === 'verificado') notifyOrderByEmail(id, 'verified')
+}
+
+// El correo es una cortesía, no una condición de la compra: si Resend está
+// caído o el secret no está configurado, el pedido ya quedó guardado igual y
+// no queremos romper el checkout ni el aprobado del admin por esto.
+function notifyOrderByEmail(orderId, kind) {
+  supabase.functions.invoke('send-order-email', { body: { orderId, kind } }).catch((err) => {
+    console.error('No se pudo enviar el correo de notificación:', err)
+  })
 }
