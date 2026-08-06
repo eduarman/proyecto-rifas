@@ -9,6 +9,8 @@ import { useNav } from '../composables/useNav.js'
 
 const { goRifas, goSection, goAdmin } = useNav()
 
+const WHATSAPP_URL = 'https://wa.me/584125168616'
+
 // content.js only fetches rifas once, at module load — refetch on every
 // visit to Home so a tab open since before a rifa was created/toggled
 // picks up the change (Home doesn't list rifas directly, but RifasView
@@ -210,9 +212,11 @@ function toggleFaq(i) {
             transparentes y premios reales.
           </p>
           <div class="footer-links footer-links-mobile">
+            <a href="#" @click.prevent="goRifas">Rifas activas</a>
+            <a :href="WHATSAPP_URL" target="_blank" rel="noopener">Contacto</a>
+            <a href="#" @click.prevent="goAdmin">Panel admin</a>
             <a href="#">Términos</a>
             <a href="#">Privacidad</a>
-            <a href="#">Contacto</a>
           </div>
         </div>
         <div class="footer-col footer-nav-col">
@@ -227,7 +231,7 @@ function toggleFaq(i) {
           <a href="#">Términos y condiciones</a>
           <a href="#">Política de privacidad</a>
           <a href="#">Reglamento de sorteos</a>
-          <a href="#">Contacto</a>
+          <a :href="WHATSAPP_URL" target="_blank" rel="noopener">Contacto</a>
           <a href="#" @click.prevent="goAdmin">Panel admin</a>
         </div>
       </div>
@@ -662,7 +666,8 @@ function toggleFaq(i) {
 }
 .footer-links {
   display: flex;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 10px 16px;
   margin-bottom: 24px;
 }
 .footer-links a {

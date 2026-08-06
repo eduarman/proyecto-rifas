@@ -72,8 +72,8 @@ const displayName = computed(() => {
 .item {
   padding: 14px 6px;
   color: var(--ink);
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 16.5px;
+  font-weight: 700;
   border-bottom: 1px solid #f1f5f9;
 }
 .item.last {

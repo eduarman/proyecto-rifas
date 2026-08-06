@@ -42,9 +42,12 @@ export function useNav() {
     }
   }
 
+  // La ruta padre /admin no tiene `name` (solo sus hijas: admin-rifas,
+  // admin-ventas, etc.), así que un push por nombre nunca encontraba
+  // coincidencia. Por path sí resuelve y sigue el redirect a /admin/rifas.
   function goAdmin() {
     menuOpen.value = false
-    router.push({ name: 'admin' })
+    router.push('/admin')
   }
 
   // Requires a real customer session before checkout: logged in goes

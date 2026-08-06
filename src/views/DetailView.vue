@@ -97,7 +97,8 @@ function handleBuy() {
     <div v-else class="grid">
       <div class="left">
         <div class="thumb">
-          <span class="thumb-label">{{ selectedRifa.imageLabel }}</span>
+          <img v-if="selectedRifa.imageUrl" :src="selectedRifa.imageUrl" class="thumb-img" :alt="selectedRifa.title" />
+          <span v-else class="thumb-label">{{ selectedRifa.imageLabel }}</span>
           <div class="badge" :style="{ background: selectedRifa.badgeBg, color: selectedRifa.badgeColor }">
             {{ selectedRifa.badge }}
           </div>
@@ -208,6 +209,7 @@ function handleBuy() {
   height: 220px;
   margin: 0 18px;
   border-radius: 16px;
+  overflow: hidden;
   background: repeating-linear-gradient(
     135deg,
     #eef1f6 0px,
@@ -226,6 +228,11 @@ function handleBuy() {
   background: rgba(255, 255, 255, 0.85);
   padding: 5px 10px;
   border-radius: 6px;
+}
+.thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .badge {
   position: absolute;

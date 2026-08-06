@@ -24,7 +24,8 @@ const activeRifas = computed(() => rifas.filter((r) => r.active))
     <div class="list">
       <div v-for="r in activeRifas" :key="r.id" class="card">
         <div class="thumb">
-          <span class="thumb-label">{{ r.imageLabel }}</span>
+          <img v-if="r.imageUrl" :src="r.imageUrl" class="thumb-img" :alt="r.title" />
+          <span v-else class="thumb-label">{{ r.imageLabel }}</span>
           <div class="badge" :style="{ background: r.badgeBg, color: r.badgeColor }">{{ r.badge }}</div>
         </div>
         <div class="body">
@@ -106,6 +107,11 @@ const activeRifas = computed(() => rifas.filter((r) => r.active))
   background: rgba(255, 255, 255, 0.85);
   padding: 5px 9px;
   border-radius: 6px;
+}
+.thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .badge {
   position: absolute;

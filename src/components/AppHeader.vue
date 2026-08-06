@@ -100,8 +100,8 @@ const displayName = computed(() => {
   }
   .nav-desktop a {
     color: var(--slate-700);
-    font-weight: 500;
-    font-size: 15px;
+    font-weight: 700;
+    font-size: 16.5px;
   }
   .nav-desktop a:hover {
     color: var(--ink);

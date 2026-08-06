@@ -151,11 +151,15 @@ function rowToRifa(row) {
     date: row.date,
     price: row.price,
     imageLabel: row.image_label,
+    imageUrl: row.image_url,
     active: row.active,
     custom: row.custom,
   }
 }
 
+// No incluye image_url a propósito: esta se edita aparte, con
+// uploadRifaImage/updateRifaImage, para no pisarla sin querer en un update
+// parcial (supabase solo toca las columnas presentes en el objeto).
 function rifaToRow(data) {
   return {
     badge: data.badge,
@@ -197,12 +201,53 @@ function slugify(text) {
 export async function addRifa(data) {
   let id = slugify(data.title)
   if (rifas.some((r) => r.id === id)) id += `-${Date.now().toString(36)}`
-  const row = { id, ...rifaToRow(data), active: true, custom: true }
+  const row = { id, ...rifaToRow(data), image_url: data.imageUrl || null, active: true, custom: true }
   const { data: inserted, error } = await supabase.from('rifas').insert(row).select().single()
   if (error) throw error
   const nueva = rowToRifa(inserted)
   rifas.unshift(nueva)
   return nueva
+}
+
+// Edita los campos de una rifa ya publicada (semilla o creada desde el
+// panel) sin tocar su imagen — esa se administra aparte en la lista.
+export async function updateRifa(id, data) {
+  const { data: updated, error } = await supabase.from('rifas').update(rifaToRow(data)).eq('id', id).select().single()
+  if (error) throw error
+  const nueva = rowToRifa(updated)
+  const idx = rifas.findIndex((r) => r.id === id)
+  if (idx !== -1) rifas[idx] = nueva
+  return nueva
+}
+
+const MAX_RIFA_IMAGE_BYTES = 3 * 1024 * 1024
+const ALLOWED_RIFA_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+
+// Bucket público (a diferencia de comprobantes): estas fotos se muestran en
+// la página pública de rifas, no solo al admin. Sin límite de tamaño, un
+// admin podría subir sin querer una foto de cámara de varios MB y volver
+// lenta la carga del sitio para todos los visitantes.
+export async function uploadRifaImage(file) {
+  if (!ALLOWED_RIFA_IMAGE_TYPES.includes(file.type)) {
+    throw new Error('Formato no soportado. Usa una imagen JPG, PNG o WebP.')
+  }
+  if (file.size > MAX_RIFA_IMAGE_BYTES) {
+    throw new Error(`La imagen pesa ${(file.size / 1024 / 1024).toFixed(1)} MB. El máximo permitido es 3 MB.`)
+  }
+  const ext = file.name.split('.').pop()
+  const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+  const { error } = await supabase.storage.from('rifa-images').upload(path, file)
+  if (error) throw error
+  return supabase.storage.from('rifa-images').getPublicUrl(path).data.publicUrl
+}
+
+// Actualiza solo la imagen de una rifa ya publicada (semilla o creada desde
+// el panel) sin tocar el resto de sus campos.
+export async function updateRifaImage(id, imageUrl) {
+  const { error } = await supabase.from('rifas').update({ image_url: imageUrl }).eq('id', id)
+  if (error) throw error
+  const rifa = rifas.find((r) => r.id === id)
+  if (rifa) rifa.imageUrl = imageUrl
 }
 
 // Hard delete: only for rifas created in the admin panel. Seed rifas from the
