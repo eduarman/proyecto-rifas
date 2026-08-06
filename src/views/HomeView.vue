@@ -238,6 +238,7 @@ function toggleFaq(i) {
       <div class="footer-bottom">
         <span>© 2026 Rifly. Todos los derechos reservados.</span>
         <span class="footer-tagline">Hecho con confianza y transparencia.</span>
+        <span class="footer-credit">Sitio desarrollado por <a href="https://sitis.cl" target="_blank" rel="noopener">Sitis</a></span>
       </div>
     </footer>
   </div>
@@ -681,9 +682,19 @@ function toggleFaq(i) {
 .footer-bottom {
   font-size: 12px;
   color: var(--slate-400);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 .footer-tagline {
   display: none;
+}
+.footer-credit a {
+  color: var(--slate-500);
+  font-weight: 600;
+}
+.footer-credit a:hover {
+  color: var(--brand);
 }
 
 /* ============ DESKTOP (>=1024px) ============ */
@@ -984,7 +995,7 @@ function toggleFaq(i) {
     margin: 32px auto 0;
     padding-top: 20px;
     border-top: 1px solid var(--line-soft);
-    display: flex;
+    flex-direction: row;
     justify-content: space-between;
   }
   .footer-tagline {
