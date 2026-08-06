@@ -9,6 +9,9 @@ import { signIn, signInWithGoogle } from '../composables/useCustomerAuth.js'
 const route = useRoute()
 const router = useRouter()
 const { goHome, goRegister } = useNav()
+function goForgotPassword() {
+  router.push({ name: 'forgot-password' })
+}
 
 const email = ref('')
 const password = ref('')
@@ -78,7 +81,7 @@ async function handleGoogle() {
 
       <div class="pw-row">
         <label class="field-label">Contraseña</label>
-        <a v-if="!isAdminLogin" href="#" class="link-sm">¿Olvidaste?</a>
+        <a v-if="!isAdminLogin" href="#" class="link-sm" @click.prevent="goForgotPassword">¿Olvidaste?</a>
       </div>
       <input v-model="password" type="password" placeholder="••••••••" class="input" />
 

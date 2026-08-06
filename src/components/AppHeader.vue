@@ -6,6 +6,11 @@ import { customerSession, signOut } from '../composables/useCustomerAuth.js'
 
 const { goHome, goRifas, goLogin, goOrders, goSection, toggleMenu } = useNav()
 
+async function handleSignOut() {
+  await signOut()
+  goHome()
+}
+
 const displayName = computed(() => {
   const user = customerSession.value?.user
   return user?.user_metadata?.full_name?.split(' ')[0] || user?.email
@@ -30,7 +35,7 @@ const displayName = computed(() => {
       <template v-if="customerSession">
         <span class="user-name">Hola, {{ displayName }}</span>
         <a href="#" class="login-link" @click.prevent="goOrders">Mis compras</a>
-        <a href="#" class="login-link" @click.prevent="signOut">Salir</a>
+        <a href="#" class="login-link" @click.prevent="handleSignOut">Salir</a>
       </template>
       <a v-else href="#" class="login-link" @click.prevent="goLogin()">Ingresar</a>
       <button class="cta" @click="goRifas">Participar</button>

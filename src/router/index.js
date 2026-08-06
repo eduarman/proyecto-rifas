@@ -4,6 +4,7 @@ import RifasView from '../views/RifasView.vue'
 import DetailView from '../views/DetailView.vue'
 import LoginView from '../views/LoginView.vue'
 import RegisterView from '../views/RegisterView.vue'
+import ForgotPasswordView from '../views/ForgotPasswordView.vue'
 import CheckoutView from '../views/CheckoutView.vue'
 import OrdersView from '../views/OrdersView.vue'
 import AdminLayout from '../layouts/AdminLayout.vue'
@@ -22,6 +23,7 @@ const router = createRouter({
     { path: '/rifas', name: 'rifas', component: RifasView },
     { path: '/rifas/:id', name: 'detail', component: DetailView, props: true },
     { path: '/login', name: 'login', component: LoginView },
+    { path: '/recuperar-contrasena', name: 'forgot-password', component: ForgotPasswordView },
     { path: '/registro', name: 'register', component: RegisterView },
     { path: '/pago/:id', name: 'checkout', component: CheckoutView, props: true, meta: { requiresCustomer: true } },
     { path: '/mis-compras', name: 'orders', component: OrdersView, meta: { requiresCustomer: true } },

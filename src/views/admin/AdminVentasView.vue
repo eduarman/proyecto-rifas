@@ -22,6 +22,31 @@ function padNumber(n, width) {
   return String(n).padStart(width, '0')
 }
 
+// jsPDF/ExcelJS son pesados y solo los usa el admin al exportar, así que se
+// cargan bajo demanda en vez de ir en el bundle principal del sitio público.
+const exportingPdf = reactive({})
+const exportingExcel = reactive({})
+
+async function handleExportPdf(row) {
+  exportingPdf[row.id] = true
+  try {
+    const { exportRifaPdf } = await import('../../utils/reports.js')
+    exportRifaPdf(row)
+  } finally {
+    exportingPdf[row.id] = false
+  }
+}
+
+async function handleExportExcel(row) {
+  exportingExcel[row.id] = true
+  try {
+    const { exportRifaExcel } = await import('../../utils/reports.js')
+    await exportRifaExcel(row)
+  } finally {
+    exportingExcel[row.id] = false
+  }
+}
+
 // "Vendido" = números con pedido pendiente o verificado. Los rechazados no
 // cuentan: esos números vuelven a quedar disponibles.
 const rows = computed(() =>
@@ -126,6 +151,13 @@ const totales = computed(() =>
             </button>
             <button v-if="r.active" class="sales-toggle" @click="toggleGrid(r.id)">
               {{ gridOpen[r.id] ? 'Ocultar grilla de números' : 'Ver grilla de números' }}
+            </button>
+            <span class="sales-toggle-sep" />
+            <button class="sales-toggle" :disabled="exportingPdf[r.id]" @click="handleExportPdf(r)">
+              {{ exportingPdf[r.id] ? 'Generando…' : 'Exportar PDF' }}
+            </button>
+            <button class="sales-toggle" :disabled="exportingExcel[r.id]" @click="handleExportExcel(r)">
+              {{ exportingExcel[r.id] ? 'Generando…' : 'Exportar Excel' }}
             </button>
           </div>
 
@@ -267,6 +299,15 @@ const totales = computed(() =>
 }
 .sales-toggle:hover {
   color: var(--brand-dark);
+}
+.sales-toggle:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.sales-toggle-sep {
+  width: 1px;
+  align-self: stretch;
+  background: var(--line-soft);
 }
 .numbers-grid-wrap {
   margin-top: 12px;

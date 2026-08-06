@@ -33,6 +33,10 @@ export async function signInWithGoogle(redirectPath = '') {
   })
 }
 
+export async function sendPasswordResetEmail(email) {
+  return supabase.auth.resetPasswordForEmail(email)
+}
+
 export async function signOut() {
   await supabase.auth.signOut()
 }

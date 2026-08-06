@@ -35,7 +35,11 @@ export function useNav() {
 
   function goOrders() {
     menuOpen.value = false
-    router.push({ name: 'orders' })
+    if (customerSession.value) {
+      router.push({ name: 'orders' })
+    } else {
+      router.push({ name: 'login', query: { next: '/mis-compras' } })
+    }
   }
 
   function goAdmin() {
