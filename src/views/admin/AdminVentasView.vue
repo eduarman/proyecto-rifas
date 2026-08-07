@@ -169,6 +169,8 @@ const totales = computed(() =>
                 <div class="sales-order-meta">
                   {{ o.qty }} número(s)<span v-if="o.numbers?.length"> ({{ o.numbers.join(', ') }})</span> ·
                   {{ o.paymentMethod }} · {{ o.buyerContact }}
+                  <span v-if="o.buyerCedula"> · CI: {{ o.buyerCedula }}</span>
+                  <span v-if="o.buyerCity"> · {{ o.buyerCity }}</span>
                 </div>
               </div>
               <span class="status-chip" :class="'status-' + o.status">{{ o.status }}</span>
@@ -203,26 +205,6 @@ const totales = computed(() =>
 </template>
 
 <style scoped>
-.summary-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  margin-bottom: 20px;
-}
-.summary-card {
-  padding: 18px 20px;
-}
-.summary-label {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--slate-500);
-  margin-bottom: 6px;
-}
-.summary-value {
-  font-size: 22px;
-  font-weight: 800;
-}
-
 .sales-list {
   display: flex;
   flex-direction: column;
@@ -398,9 +380,4 @@ const totales = computed(() =>
   font-size: 12px;
 }
 
-@media (min-width: 640px) {
-  .summary-row {
-    grid-template-columns: repeat(2, minmax(0, 220px));
-  }
-}
 </style>

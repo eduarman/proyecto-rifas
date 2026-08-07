@@ -1,7 +1,8 @@
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { rifas, loadRifas } from '../data/content.js'
 import { useNav } from '../composables/useNav.js'
+import AppFooter from '../components/AppFooter.vue'
 
 const { selectRifa } = useNav()
 
@@ -14,6 +15,15 @@ onMounted(() => {
 
 // Rifas deactivated from the admin panel stay out of the public listing.
 const activeRifas = computed(() => rifas.filter((r) => r.active))
+
+// Show a first page of cards and let "Ver todas las rifas" reveal the rest,
+// instead of dumping the whole (potentially long) list on first paint.
+const PAGE_SIZE = 6
+const visibleCount = ref(PAGE_SIZE)
+const visibleRifas = computed(() => activeRifas.value.slice(0, visibleCount.value))
+function showAll() {
+  visibleCount.value = activeRifas.value.length
+}
 </script>
 
 <template>
@@ -22,7 +32,7 @@ const activeRifas = computed(() => rifas.filter((r) => r.active))
     <p class="sub">Sorteos activos verificados. Desde $2 USD.</p>
 
     <div class="list">
-      <div v-for="r in activeRifas" :key="r.id" class="card">
+      <div v-for="r in visibleRifas" :key="r.id" class="card">
         <div class="thumb">
           <img v-if="r.imageUrl" :src="r.imageUrl" class="thumb-img" :alt="r.title" />
           <span v-else class="thumb-label">{{ r.imageLabel }}</span>
@@ -55,8 +65,12 @@ const activeRifas = computed(() => rifas.filter((r) => r.active))
       </div>
     </div>
 
-    <button class="see-all">Ver todas las rifas →</button>
+    <button v-if="visibleCount < activeRifas.length" class="see-all" @click="showAll">
+      Ver todas las rifas →
+    </button>
   </div>
+
+  <AppFooter />
 </template>
 
 <style scoped>

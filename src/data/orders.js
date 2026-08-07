@@ -18,6 +18,8 @@ function rowToOrder(row) {
     paymentMethod: row.payment_method,
     buyerName: row.buyer_name,
     buyerContact: row.buyer_contact,
+    buyerCedula: row.buyer_cedula,
+    buyerCity: row.buyer_city,
     proofPath: row.proof_path,
     status: row.status,
     createdAt: row.created_at,
@@ -78,6 +80,8 @@ export async function addOrder(data) {
     p_payment_method: data.paymentMethod,
     p_buyer_name: data.buyerName,
     p_buyer_contact: data.buyerContact,
+    p_buyer_cedula: data.buyerCedula,
+    p_buyer_city: data.buyerCity,
     p_proof_path: data.proofPath || null,
     p_user_id: data.userId || null,
   })

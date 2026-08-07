@@ -11,6 +11,8 @@ const STATUS_LABEL = {
 const REPORT_COLUMNS = [
   { header: 'Número', key: 'numero', width: 12 },
   { header: 'Comprador', key: 'comprador', width: 28 },
+  { header: 'Cédula', key: 'cedula', width: 16 },
+  { header: 'Ciudad', key: 'ciudad', width: 18 },
   { header: 'Contacto', key: 'contacto', width: 22 },
   { header: 'Método de pago', key: 'metodoPago', width: 18 },
   { header: 'Estado', key: 'estado', width: 14 },
@@ -31,6 +33,8 @@ function buildRows(row) {
     rows.push({
       numero: String(n).padStart(row.numberWidth, '0'),
       comprador: o?.buyerName || '',
+      cedula: o?.buyerCedula || '',
+      ciudad: o?.buyerCity || '',
       contacto: o?.buyerContact || '',
       metodoPago: o?.paymentMethod || '',
       estado: o ? STATUS_LABEL[o.status] || o.status : 'Disponible',

@@ -80,6 +80,8 @@ const currentMethod = computed(() => paymentMethods.find((m) => m.id === selecte
 const accountUser = customerSession.value?.user
 const buyerName = ref(accountUser?.user_metadata?.full_name || '')
 const buyerContact = ref(accountUser?.email || '')
+const buyerCedula = ref('')
+const buyerCity = ref('')
 const fileName = ref('')
 const selectedFile = ref(null)
 const submitted = ref(false)
@@ -106,6 +108,8 @@ async function handleSubmit() {
       paymentMethod: currentMethod.value.label,
       buyerName: buyerName.value,
       buyerContact: buyerContact.value,
+      buyerCedula: buyerCedula.value,
+      buyerCity: buyerCity.value,
       proofPath,
     })
     submitted.value = true
@@ -177,6 +181,12 @@ async function handleSubmit() {
 
       <label class="field-label">Nombre completo</label>
       <input v-model="buyerName" required class="input" placeholder="Ej: Ana Torres" />
+
+      <label class="field-label">Cédula de identidad</label>
+      <input v-model="buyerCedula" required class="input" placeholder="Ej: V-12345678" />
+
+      <label class="field-label">Ciudad de residencia</label>
+      <input v-model="buyerCity" required class="input" placeholder="Ej: Caracas" />
 
       <label class="field-label">Correo electrónico de contacto</label>
       <input

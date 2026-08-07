@@ -159,6 +159,7 @@ async function handleLogout() {
   text-align: left;
   width: 100%;
   box-sizing: border-box;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 .nav-item:hover {
   background: var(--panel);
@@ -166,6 +167,9 @@ async function handleLogout() {
 }
 .nav-item.router-link-active {
   background: var(--tint);
+  color: var(--brand);
+}
+.nav-item.router-link-active .nav-icon {
   color: var(--brand);
 }
 .nav-icon {
@@ -193,6 +197,10 @@ async function handleLogout() {
   display: flex;
   align-items: center;
   gap: 14px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
 }
 .burger {
   background: none;
