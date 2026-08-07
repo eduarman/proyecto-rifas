@@ -82,6 +82,7 @@ const buyerName = ref(accountUser?.user_metadata?.full_name || '')
 const buyerContact = ref(accountUser?.email || '')
 const buyerCedula = ref('')
 const buyerCity = ref('')
+const buyerPhone = ref('')
 const fileName = ref('')
 const selectedFile = ref(null)
 const submitted = ref(false)
@@ -110,6 +111,7 @@ async function handleSubmit() {
       buyerContact: buyerContact.value,
       buyerCedula: buyerCedula.value,
       buyerCity: buyerCity.value,
+      buyerPhone: selectedMethod.value === 'movil' ? `+58${buyerPhone.value.trim()}` : null,
       proofPath,
     })
     submitted.value = true
@@ -179,11 +181,20 @@ async function handleSubmit() {
         </div>
       </div>
 
-      <label class="field-label">Nombre completo</label>
+      <template v-if="selectedMethod === 'movil'">
+        <label class="field-label">Número de teléfono (Pago Móvil)</label>
+        <div class="phone-row">
+          <span class="phone-prefix">+58</span>
+          <input v-model="buyerPhone" type="tel" required class="input phone-input" placeholder="412-1234567" />
+        </div>
+        <p class="field-hint">El teléfono asociado a tu Pago Móvil, para verificar la transferencia.</p>
+      </template>
+
+      <label class="field-label">Nombres y apellidos</label>
       <input v-model="buyerName" required class="input" placeholder="Ej: Ana Torres" />
 
       <label class="field-label">Cédula de identidad</label>
-      <input v-model="buyerCedula" required class="input" placeholder="Ej: V-12345678" />
+      <input v-model="buyerCedula" required class="input" placeholder="12345678" />
 
       <label class="field-label">Ciudad de residencia</label>
       <input v-model="buyerCity" required class="input" placeholder="Ej: Caracas" />
@@ -332,6 +343,27 @@ async function handleSubmit() {
 }
 .input:focus {
   border-color: var(--brand);
+}
+.phone-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.phone-prefix {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 12px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--input-line);
+  background: var(--panel);
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--slate-700);
+}
+.phone-input {
+  flex: 1;
+  margin-bottom: 0;
 }
 .file-input {
   padding: 10px 14px;

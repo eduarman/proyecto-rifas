@@ -24,7 +24,7 @@ const filteredOrders = computed(() => {
   const q = search.value.trim().toLowerCase()
   if (!q) return orders
   return orders.filter((o) =>
-    [o.buyerName, o.buyerCedula, o.buyerCity, o.buyerContact, o.rifaTitle]
+    [o.buyerName, o.buyerCedula, o.buyerCity, o.buyerContact, o.buyerPhone, o.rifaTitle]
       .filter(Boolean)
       .some((field) => field.toLowerCase().includes(q)),
   )
@@ -102,6 +102,7 @@ async function viewProof(path) {
               ${{ o.total }} · {{ o.paymentMethod }} · contacto: {{ o.buyerContact }}
               <span v-if="o.buyerCedula"> · CI: {{ o.buyerCedula }}</span>
               <span v-if="o.buyerCity"> · {{ o.buyerCity }}</span>
+              <span v-if="o.buyerPhone"> · Tel: {{ o.buyerPhone }}</span>
             </div>
           </div>
           <div class="row-actions">
